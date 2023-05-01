@@ -51,7 +51,7 @@ set_property PACKAGE_PIN C12 [get_ports {sw[6]}]
 set_property PACKAGE_PIN B12 [get_ports {sw[7]}]
 
 create_clock -period 10.000 -name clk100M -waveform {0.000 5.000} [get_ports clk100M]
-create_clock -period 10.000 -name hdmi_rx_clk_p -waveform {0.000 5.000} [get_ports {hdmi_rx_clk_p}]
+create_clock -period 10.000 -name hdmi_rx_clk_p -waveform {0.000 5.000} [get_ports hdmi_rx_clk_p]
 
 set_property CONFIG_VOLTAGE 3.3 [current_design]
 set_property CFGBVS VCCO [current_design]
@@ -74,4 +74,7 @@ set_property PACKAGE_PIN E23 [get_ports hdmi_rx_sda]
 set_property PACKAGE_PIN G21 [get_ports hdmi_tx_hpdn]
 set_property PACKAGE_PIN D24 [get_ports hdmi_tx_scl]
 set_property PACKAGE_PIN C24 [get_ports hdmi_tx_sda]
+
+
+
 
