@@ -144,17 +144,41 @@ hdmi_rx hdmi_rx_0(
 );
 
 // loopback
-reg [7:0] tx_red, tx_green, tx_blue;
-reg tx_dv, tx_hs, tx_vs;
-always @ ( * )
-begin
-   tx_dv    <= rx_dv;
-   tx_hs    <= rx_hs;
-   tx_vs    <= rx_vs;
-   tx_red   <= rx_red;
-   tx_green <= rx_green;
-   tx_blue  <= rx_blue;
-end
+//reg [7:0] tx_red, tx_green, tx_blue;
+//reg tx_dv, tx_hs, tx_vs;
+//always @ ( * )
+//begin
+//   tx_dv    <= rx_dv;
+//   tx_hs    <= rx_hs;
+//   tx_vs    <= rx_vs;
+//   tx_red   <= rx_red;
+//   tx_green <= rx_green;
+//   tx_blue  <= rx_blue;
+//end
+wire [7:0] y;
+wire [7:0] tx_red, tx_green, tx_blue;
+wire tx_dv, tx_hs, tx_vs;
+rgb2y rgb2y(
+    .clk  (rx_clk),
+
+    .kr_i (27865),   // 0.2126
+    .kb_i (9463),    // 0.0722
+
+    .dv_i (rx_dv),
+    .hs_i (rx_hs),
+    .vs_i (rx_vs),
+    .r_i  (rx_red),
+    .g_i  (rx_green),
+    .b_i  (rx_blue),
+
+    .dv_o (tx_dv),
+    .hs_o (tx_hs),
+    .vs_o (tx_vs),
+    .y_o  (y)
+);
+assign tx_red   = y;
+assign tx_green = y;
+assign tx_blue  = y;
  
 
 hdmi_tx hdmi_tx_0(
