@@ -22,6 +22,7 @@
 
 module fir_filter(
     input       clk,
+    input       rst,
     (* mark_debug="true" *) input [7:0] y_i,
     input       dv_i,
     input       hs_i,
@@ -34,18 +35,12 @@ module fir_filter(
     (* mark_debug="true" *) output           hs_o,
     (* mark_debug="true" *) output           vs_o
     );
+     
+localparam MAX_COLS = 1600;
+localparam MAX_ROWS = 900;
 
-`define MAX_COLS 1600+4
-`define MAX_ROWS 900+4
-// Row and col counter
 reg [10:0] cols; // max 1600
 reg [9:0] rows; // max 900
-
-// Creating BRAM for the first 4 rows
-// Need to store four rows to start the convolution because the 
-// process can be started real time.
-// Maximum image width is 1600 pixel and because of the 5x5 filter the image need to be 
-// padded with 2-2 zero pixel so the array length is 2+1600+2 = 1604
 
 //************************************************************************************
 // Edge detection for VS and HS logic START
@@ -66,79 +61,106 @@ assign dv_edge_i = ~dv_dly & dv_i;
 // Edge detection for VS and HS logic END
 //************************************************************************************
 
-(* mark_debug="true" *) reg [7:0] rows_bram[4*1604:0];
-(* mark_debug="true" *) reg [1:0] row_cntr;
-//************************************************************************************
-// Padding logic START
-//************************************************************************************
-// Blanking logic after the vertical sync logic
-reg [10:0] cols_fz; // max 1600
-reg padding_en;
-reg wr_cntr;
-wire bram_wr;
-
-assign bram_wr = dv_i;
-
-always @(posedge clk)
-begin
-    if (bram_wr)
-    begin
-        case(row_cntr)
-            2'b00: rows_bram[0*`MAX_COLS + cols] <= y_i;
-            2'b01: rows_bram[1*`MAX_COLS + cols] <= y_i;
-            2'b10: rows_bram[2*`MAX_COLS + cols] <= y_i; 
-            2'b11: rows_bram[3*`MAX_COLS + cols] <= y_i;
-        endcase
-        cols <= cols + 1;
-    end
-    else
-    begin
-        if (vs_edge_i)
-        begin
-            // Enable padding and set cols to 0
-            padding_en <= 1;
-            // The padded part is 0 after configuring the fpga and we should never write in this region 
-            // so this should not fill with 0s
-            cols_fz <= 2;
-            rows <= 0;
-            wr_cntr <= 0;
-            row_cntr <= 2'b11;
-        end
-        
-        // Start padding to set row to 0 before new frame arrives
-        if (padding_en)
-        begin
-            if (wr_cntr)
-                rows_bram[0*`MAX_COLS + cols_fz] <= 0;
-            else
-                rows_bram[1*`MAX_COLS + cols_fz] <= 0;
-            wr_cntr <= ~wr_cntr;
-        end
-        
-        // If max width is qual es max width -1 max width pixel is cleared so
-        // disable the padding.
-        // And the storing will start at the 3rd row.
-        // -2 same thing as at the beginning.
-        // TODO: Change this if the timming is not good at lower resolution
-        if (cols == 2 * `MAX_COLS - 1 - 2)
-        begin
-            padding_en <= 0;
-        end
-    end
-    
-    if (~dv_i & hs_edge_i)
-    begin
-        cols <= 2;
-        row_cntr <= row_cntr + 1;
-    end
-end
-//************************************************************************************
-// Padding logic END
-//************************************************************************************
 
 //************************************************************************************
 // Convulution and write out START
 //************************************************************************************
+// Row and col counter
+
+// BRAM 1 instance
+reg ram11_wr;
+reg ram12_wr;
+reg [10:0] ram11_addr, ram_12_addr;
+reg [7:0] ram11_data, ram12_data;
+
+dp_bram 
+#(
+    .DEPTH (2 * MAX_COLS)
+)
+dp_bram1 (
+    .clk(clk),
+    .we_a(ram11_wr),
+    .we_n(ram12_wr),
+    .addr_a(ram11_addr),
+    .addr_b(ram_12_addr),
+    .din_a(ram11_data),
+    .dout_b(ram12_data)
+);
+
+// BRAM 2 instance
+reg ram21_wr;
+reg ram22_wr;
+reg [10:0] ram21_addr, ram_22_addr;
+reg [7:0] ram21_data, ram22_data;
+
+dp_bram 
+#(
+    .DEPTH (2 * MAX_COLS)
+)
+dp_bram2 (
+    .clk(clk),
+    .we_a(ram21_wr),
+    .we_n(ram22_wr),
+    .addr_a(ram21_addr),
+    .addr_b(ram_22_addr),
+    .din_a(ram21_data),
+    .dout_b(ram22_data)
+);
+
+reg [1:0] bram_cntr;
+always @(posedge clk)
+begin
+    if (rst)
+    begin
+        bram_cntr <= 0;
+    end
+    else
+    begin
+        // Saving in the ram.
+        if (bram_cntr == 0)
+        begin
+            ram21_wr <= 0;
+            ram11_wr <= 1;
+            ram11_data <= y_i;
+            ram11_addr <= cols;
+        end
+        else
+        begin
+            ram12_wr <= 0;
+            ram11_wr <= 1;
+            ram11_data <= y_i;
+            ram11_addr <= cols;
+        end
+    end
+end
+
+reg dsp1_input, dsp2_input, dsp3_input;
+reg rows_count = 0;
+always @(posedge clk)
+begin
+    // First two row is only getting the image
+    if (rows >= 2 & dv_i)
+    begin
+        // Collecting the frame m-1
+        ram11_addr <= rows * (rows_count  * MAX_COLS) + cols;
+        dsp1_input <= ram11_data;
+        // Collectin the frame m-1 element
+        ram11_addr <= rows * ((rows_count + 1)  * MAX_COLS) + cols;
+        dsp2_input <= ram11_data;
+        //Collecting the frame m element
+        dsp3_input <= y_i;
+        
+        rows_count <= rows_count + 1;
+    end
+end
+
+// Calculation with dsps
+reg [31:0] sum;
+always @(posedge clk)
+begin
+    
+end
+
 (* mark_debug="true" *) reg [7:0] y_o_reg;
 // TODO: Convolution here
 reg dv_o_reg, hs_o_reg, vs_o_reg;
@@ -146,7 +168,7 @@ reg [1:0] row_mod_o;
 
 always @(posedge clk)
 begin
-    y_o_reg <= rows_bram[3 * `MAX_COLS + cols + 3];
+    y_o_reg <= y_i;
     dv_o_reg <= dv_i;
     hs_o_reg <= hs_i;
     vs_o_reg <= vs_i;

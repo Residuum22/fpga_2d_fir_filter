@@ -166,9 +166,10 @@ rgb2y rgb2y_0(
 );
 
 wire tx_dv, tx_hs, tx_vs;
+
 fir_filter fir_filter_0(
     .clk(rx_clk),
-    
+    .rst(rstbt),
     .y_i(y),
     .dv_i(y_dv),
     .hs_i(y_hs),
