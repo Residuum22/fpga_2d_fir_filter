@@ -63,106 +63,182 @@ assign dv_edge_i = ~dv_dly & dv_i;
 
 
 //************************************************************************************
-// Convulution and write out START
+// BRAM logic START
 //************************************************************************************
-// Row and col counter
+// With one port of the BRAM the data will be written into the RAM
+// With the second port of the BRAM the data will be read from the RAM
+
+// TODO check sythesis result because the with this configuration one 36Kb BRAM is used with
+// two 18Kb configuration. 2k x 9bit = 18000 bit RAM. 
 
 // BRAM 1 instance
-reg ram11_wr;
-reg ram12_wr;
-reg [10:0] ram11_addr, ram_12_addr;
-reg [7:0] ram11_data, ram12_data;
+reg bram1_wr;
+reg [10:0] bram1_addr_wr, bram1_addr_rd;
+reg [7:0] bram1_data_wr, bram1_data_rd;
 
 dp_bram 
 #(
-    .DEPTH (2 * MAX_COLS)
+    .DEPTH (MAX_COLS)
 )
 dp_bram1 (
     .clk(clk),
-    .we_a(ram11_wr),
-    .we_n(ram12_wr),
-    .addr_a(ram11_addr),
-    .addr_b(ram_12_addr),
-    .din_a(ram11_data),
-    .dout_b(ram12_data)
+
+    .we_a(bram1_wr),
+    .we_b(0),
+
+    .addr_a(bram1_addr_wr),
+    .addr_b(bram1_addr_rd),
+
+    .din_a(bram1_data_wr),
+    .din_b(bram1_data_wr),
+
+    .dout_a(bram1_data_rd),
+    .dout_b(bram1_data_rd),
 );
 
 // BRAM 2 instance
-reg ram21_wr;
-reg ram22_wr;
-reg [10:0] ram21_addr, ram_22_addr;
-reg [7:0] ram21_data, ram22_data;
+reg bram2_wr;
+reg [10:0] bram2_addr_wr, bram_2_addr_rd;
+reg [7:0] bram2_data_wr, bram2_data_rd;
 
 dp_bram 
 #(
-    .DEPTH (2 * MAX_COLS)
+    .DEPTH (MAX_COLS)
 )
 dp_bram2 (
     .clk(clk),
-    .we_a(ram21_wr),
-    .we_n(ram22_wr),
-    .addr_a(ram21_addr),
-    .addr_b(ram_22_addr),
-    .din_a(ram21_data),
-    .dout_b(ram22_data)
+
+    .we_a(bram2_wr),
+    .we_b(0),
+
+    .addr_a(bram2_addr_wr),
+    .addr_b(bram2_addr_rd),
+
+    .din_a(bram2_data_wr),
+    .din_b(bram2_data_wr),
+
+    .dout_a(bram2_data_rd),
+    .dout_b(bram2_data_rd),
 );
 
-reg [1:0] bram_cntr;
+//************************************************************************************
+// BRAM logic END
+//************************************************************************************
+
+
+//************************************************************************************
+// Row storing START
+//************************************************************************************
+reg bram_row_modulo;
+
+// Write need to happen after 1 CLK because I don't want to write and read
+// at the same time. If I would do that I need to check more about the BRAM 
+reg [3:0] shift_signals;
+wire y_i_p1, dv_i_p1, hs_i_p1, vs_i_p1;
+// Assign controls with one CLK delay.
+always @ (posedge clk)
+    shift_signals <= {y_i, dv_i, hs_i, vs_i};
+
+assign y_i_p1  = shift_signals[3];
+assign dv_i_p1 = shift_signals[2];
+assign hs_i_p1 = shift_signals[1];
+assign vs_i_p1 = shift_signals[0];
+
+// Writing row into the BRAM
 always @(posedge clk)
 begin
-    if (rst)
+    if (rst | vs_i_p1)
     begin
-        bram_cntr <= 0;
+        bram_row_modulo <= 0;
     end
     else
     begin
         // Saving in the ram.
-        if (bram_cntr == 0)
+        if (bram_row_modulo == 0)
         begin
-            ram21_wr <= 0;
-            ram11_wr <= 1;
-            ram11_data <= y_i;
-            ram11_addr <= cols;
+            if (dv_i_p1)
+            begin
+                bram2_wr <= 0;
+                bram1_wr <= 1;
+                bram1_data_wr <= y_i_p1;
+                bram1_addr_wr <= cols;
+            end
         end
         else
         begin
-            ram12_wr <= 0;
-            ram11_wr <= 1;
-            ram11_data <= y_i;
-            ram11_addr <= cols;
+            if (dv_i_p1)
+            begin
+                bram1_wr <= 0;
+                bram2_wr <= 1;
+                bram2_data_wr <= y_i_p1;
+                bram2_addr_wr <= cols;
+            end
+        end
+
+        if (hs_i_p1)
+        begin
+            bram_row_modulo <= bram_row_modulo + 1;
         end
     end
 end
 
+//************************************************************************************
+// Row storing END
+//************************************************************************************
+
+//************************************************************************************
+// Convulution and write out START
+//************************************************************************************
+
+// For the convolution I need for dsp blocks.
+
 reg dsp1_input, dsp2_input, dsp3_input;
-reg rows_count = 0;
 always @(posedge clk)
 begin
     // First two row is only getting the image
     if (rows >= 2 & dv_i)
     begin
         // Collecting the frame m-1
-        ram11_addr <= rows * (rows_count  * MAX_COLS) + cols;
-        dsp1_input <= ram11_data;
-        // Collectin the frame m-1 element
-        ram11_addr <= rows * ((rows_count + 1)  * MAX_COLS) + cols;
-        dsp2_input <= ram11_data;
-        //Collecting the frame m element
+        bram1_addr_rd <= cols;
+        dsp1_input <= bram1_data_rd;
+
+        // Collectin the frame m element
+        bram2_addr <= cols;
+        dsp2_input <= bram2_data_rd;
+
+        //Collecting the frame m+1 element
         dsp3_input <= y_i;
-        
-        rows_count <= rows_count + 1;
     end
 end
 
 // Calculation with dsps
+reg kernel [2:0][2:0];
 reg [31:0] sum;
 always @(posedge clk)
 begin
-    
+    if (rst)
+    begin
+        kernel[0][0] <= -1;
+        kernel[0][1] <= -1;
+        kernel[0][2] <= -1;
+
+        kernel[1][0] <= -1;
+        kernel[1][1] <= 1;
+        kernel[1][2] <= -1;
+
+        kernel[2][0] <= -1;
+        kernel[2][1] <= -1;
+        kernel[2][2] <= -1;
+    end
+
+    if (dv_i)
+    begin
+        // TODO Convolution logic.     
+    end
 end
 
 (* mark_debug="true" *) reg [7:0] y_o_reg;
-// TODO: Convolution here
+// TODO: REmove this 
 reg dv_o_reg, hs_o_reg, vs_o_reg;
 reg [1:0] row_mod_o;
 
