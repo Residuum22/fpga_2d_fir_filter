@@ -192,28 +192,47 @@ end
 
 // For the convolution I need for dsp blocks.
 
-reg dsp1_input, dsp2_input, dsp3_input;
+reg [7:0] row1_data[2:0], row2_data[2:0], row3_data[2:0];
+reg [10:0] dsp_start_flag_reg;
+wire dsp_start_enable;
+
+assign dsp_start_enable = dsp_start_flag_reg >= 2 ? 1 : 0; 
+
 always @(posedge clk)
 begin
+    if (rst)
+    begin
+        dsp_start_flag_reg <= 0;
+    end
+    else
     // First two row is only getting the image
     if (rows >= 2 & dv_i)
     begin
         // Collecting the frame m-1
         bram1_addr_rd <= cols;
-        dsp1_input <= bram1_data_rd;
+        // Check this because it should be  shift register.
+        for (integer i = 0; i < 3; i = i + 1)
+            row1_data[i] <= i==0 ? bram1_data_rd : row1_data[i-1];
 
         // Collectin the frame m element
         bram2_addr <= cols;
-        dsp2_input <= bram2_data_rd;
+        for (integer i = 0; i < 3; i = i + 1)
+            row2_data[i] <= i==0 ? bram2_data_rd : row2_data[i-1];
 
         //Collecting the frame m+1 element
         dsp3_input <= y_i;
+        for (integer i = 0; i < 3; i = i + 1)
+            row3_data[i] <= i==0 ? y_i : row3_data[i-1];
+
+        dsp_start_flag_reg <= dsp_start_flag_reg + 1;
     end
 end
 
 // Calculation with dsps
 reg kernel [2:0][2:0];
-reg [31:0] sum;
+reg unsigned [31:0] sum_row1, sum_row2, sum_row3, sum_y;
+(* mark_debug="true" *) reg [7:0] y_o_reg;
+
 always @(posedge clk)
 begin
     if (rst)
@@ -233,18 +252,23 @@ begin
 
     if (dv_i)
     begin
-        // TODO Convolution logic.     
+        if (cols >= 2 & cols <= (MAX_COLS - 2) & rows >= 2 & rows <= (MAX_ROWS - 2)) 
+        begin
+            sum_row1 <= row1_data[0] * kernel[0][0] + row1_data[1] * kernel[0][1] + row1_data[2] * kernel[0][2];
+            sum_row2 <= row2_data[0] * kernel[1][0] + row2_data[1] * kernel[1][1] + row2_data[2] * kernel[1][2];
+            sum_row3 <= row3_data[0] * kernel[2][0] + row3_data[1] * kernel[2][1] + row3_data[2] * kernel[2][2];
+            sum_y <= sum_row1 + sum_row2 + sum_row3;
+            y_o_reg <= sum_y > 255 ? 255 : sum_y[7:0];
+        end
     end
 end
 
-(* mark_debug="true" *) reg [7:0] y_o_reg;
-// TODO: REmove this 
-reg dv_o_reg, hs_o_reg, vs_o_reg;
-reg [1:0] row_mod_o;
 
+reg dv_o_reg, hs_o_reg, vs_o_reg;
+
+// Assigning the controls, but I need to delay them with one CLK
 always @(posedge clk)
 begin
-    y_o_reg <= y_i;
     dv_o_reg <= dv_i;
     hs_o_reg <= hs_i;
     vs_o_reg <= vs_i;
