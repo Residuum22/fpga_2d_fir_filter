@@ -79,7 +79,7 @@ wire [7:0] bram1_data_rd;
 
 dp_bram 
 #(
-    .DEPTH (MAX_COLS)
+    .DEPTH (MAX_COLS+4)
 )
 dp_bram1 (
     .clk(clk),
@@ -105,7 +105,7 @@ wire [7:0] bram2_data_rd;
 
 dp_bram 
 #(
-    .DEPTH (MAX_COLS)
+    .DEPTH (MAX_COLS+4)
 )
 dp_bram2 (
     .clk(clk),
@@ -123,6 +123,58 @@ dp_bram2 (
     .dout_b(bram2_data_rd)
 );
 
+// BRAM 3 
+reg bram3_wr;
+reg [10:0] bram3_addr_wr, bram3_addr_rd;
+reg [7:0] bram3_data_wr;
+wire [7:0] bram3_data_rd;
+
+dp_bram 
+#(
+    .DEPTH (MAX_COLS+4)
+)
+dp_bram3 (
+    .clk(clk),
+
+    .we_a(bram3_wr),
+    .we_b(0),
+
+    .addr_a(bram3_addr_wr),
+    .addr_b(bram3_addr_rd),
+
+    .din_a(bram3_data_wr),
+    .din_b(bram3_data_wr),
+
+    .dout_a(bram3_data_rd),
+    .dout_b(bram3_data_rd)
+);
+
+// BRAM4
+reg bram4_wr;
+reg [10:0] bram4_addr_wr, bram4_addr_rd;
+reg [7:0] bram4_data_wr;
+wire [7:0] bram4_data_rd;
+
+dp_bram 
+#(
+    .DEPTH (MAX_COLS+4)
+)
+dp_bram4 (
+    .clk(clk),
+
+    .we_a(bram4_wr),
+    .we_b(0),
+
+    .addr_a(bram4_addr_wr),
+    .addr_b(bram4_addr_rd),
+
+    .din_a(bram4_data_wr),
+    .din_b(bram4_data_wr),
+
+    .dout_a(bram4_data_rd),
+    .dout_b(bram4_data_rd)
+);
+
 //************************************************************************************
 // BRAM logic END
 //************************************************************************************
@@ -131,64 +183,64 @@ dp_bram2 (
 //************************************************************************************
 // Row storing START
 //************************************************************************************
-reg bram_row_modulo;
-
-// Write need to happen after 1 CLK because I don't want to write and read
-// at the same time. If I would do that I need to check more about the BRAM 
-reg [2:0] shift_signals;
-wire dv_i_p1, hs_i_p1, vs_i_p1;
-reg [7:0] y_i_p1;
 // Assign controls with one CLK delay.
-always @ (posedge clk)
-begin
-    shift_signals <= {dv_i, hs_i, vs_i};
-    y_i_p1 <= y_i;
-end
-
-assign dv_i_p1 = shift_signals[2];
-assign hs_i_p1 = shift_signals[1];
-assign vs_i_p1 = shift_signals[0];
-
 // Writing row into the BRAM
 reg [10:0] wr_cols;
 always @(posedge clk)
 begin
-    if (rst | vs_i_p1)
+    if (rst | vs_i)
     begin
-        wr_cols <= 0;
-        bram_row_modulo <= 0;
+        wr_cols <= 2;
+        rows <= 0;
     end
-    else
+    else if (dv_i)
     begin
         // Saving in the ram.
-        if (bram_row_modulo % 2 == 0)
+        case (rows % 4)
+        2'd0:
         begin
-            if (dv_i_p1)
-            begin
-                bram2_wr <= 0;
-                bram1_wr <= 1;
-                bram1_data_wr <= y_i_p1;
-                bram1_addr_wr <= wr_cols;
-                wr_cols <= wr_cols + 1;
-            end
+            bram1_wr <= 1;
+            bram2_wr <= 0;
+            bram3_wr <= 0;
+            bram4_wr <= 0;
+            bram1_data_wr <= y_i;
+            bram1_addr_wr <= wr_cols;
         end
-        else
+        2'd1:
         begin
-            if (dv_i_p1)
-            begin
-                bram1_wr <= 0;
-                bram2_wr <= 1;
-                bram2_data_wr <= y_i_p1;
-                bram2_addr_wr <= wr_cols;
-                wr_cols <= wr_cols + 1;
-            end
+            bram1_wr <= 0;
+            bram2_wr <= 1;
+            bram3_wr <= 0;
+            bram4_wr <= 0;
+            bram1_data_wr <= y_i;
+            bram1_addr_wr <= wr_cols;
         end
-
-        if (hs_i_p1)
+        2'd2:
         begin
-            wr_cols <= 0;
+            bram1_wr <= 0;
+            bram2_wr <= 0;
+            bram3_wr <= 1;
+            bram4_wr <= 0;
+            bram1_data_wr <= y_i;
+            bram1_addr_wr <= wr_cols;
+        end
+        2'd3:
+        begin
+            bram1_wr <= 0;
+            bram2_wr <= 0;
+            bram3_wr <= 0;
+            bram4_wr <= 1;
+            bram1_data_wr <= y_i;
+            bram1_addr_wr <= wr_cols;
+        end
+        endcase
+        
+        wr_cols <= wr_cols + 1;
+        
+        if (hs_i)
+        begin
+            wr_cols <= 2;
             rows <= rows + 1;
-            bram_row_modulo <= bram_row_modulo + 1;
         end
     end
 end
@@ -200,76 +252,98 @@ end
 //************************************************************************************
 // Convulution and write out START
 //************************************************************************************
-
 // For the convolution I need for dsp blocks.
-
-reg [7:0] row1_data[2:0], row2_data[2:0], row3_data[2:0];
-reg [10:0] dsp_start_flag_reg;
-wire dsp_start_enable;
-
-assign dsp_start_enable = dsp_start_flag_reg >= 2 ? 1 : 0; 
+reg [7:0] row1_data[4:0], row2_data[4:0], row3_data[4:0], row4_data[4:0], row5_data[4:0];
 integer i;
+
 always @(posedge clk)
 begin
     if (rst)
     begin
-        dsp_start_flag_reg <= 0;
-        cols <= 0;
+        cols <= 2;
     end
     else
     // First two row is only getting the image
-    if (rows >= 2 & dv_i)
+    if (rows >= 4 & dv_i)
     begin
-        // Collecting the frame m-1
+        // Collecting the frame m-2
         bram1_addr_rd <= cols;
         // Check this because it should be  shift register.
-        for (i = 0; i < 3; i = i + 1)
+        for (i = 0; i < 5; i = i + 1)
             row1_data[i] = i==0 ? bram1_data_rd : row1_data[i-1];
 
-        // Collectin the frame m element
+        // Collecting the frame m-1
         bram2_addr_rd <= cols;
-        for (i = 0; i < 3; i = i + 1)
+        for (i = 0; i < 5; i = i + 1)
             row2_data[i] = i==0 ? bram2_data_rd : row2_data[i-1];
 
-        //Collecting the frame m+1 element
-        for (i = 0; i < 3; i = i + 1)
-            row3_data[i] = i==0 ? y_i : row3_data[i-1];
+        // Collecting the frame m
+        for (i = 0; i < 5; i = i + 1)
+            row3_data[i] = i==0 ? bram3_data_rd : row3_data[i-1];
+            
+        // Collecting the frame m+1
+        for (i = 0; i < 5; i = i + 1)
+            row4_data[i] = i==0 ? bram4_data_rd : row4_data[i-1];
+            
+        // Collecting the frame m+2
+        for (i = 0; i < 5; i = i + 1)
+            row5_data[i] = i==0 ? y_i : row5_data[i-1];
 
-        dsp_start_flag_reg <= dsp_start_flag_reg + 1;
         cols <= cols + 1;
     end
 end
 
 // Calculation with dsps
-reg kernel [2:0][2:0];
-reg [31:0] sum_row1, sum_row2, sum_row3, sum_y;
+reg kernel [4:0][4:0];
+reg [31:0] sum_row1, sum_row2, sum_row3, sum_row4, sum_row5, sum_y;
 (* mark_debug="true" *) reg [7:0] y_o_reg;
 
 always @(posedge clk)
 begin
     if (rst)
     begin
-        kernel[0][0] <= -1;
-        kernel[0][1] <= -1;
-        kernel[0][2] <= -1;
+        kernel[0][0] <= -1.2;
+        kernel[0][1] <= -1.2;
+        kernel[0][2] <= -1.2;
+        kernel[0][3] <= -1.2;
+        kernel[0][4] <= -1.2;
 
-        kernel[1][0] <= -1;
-        kernel[1][1] <= 1;
-        kernel[1][2] <= -1;
+        kernel[1][0] <= -1.2;
+        kernel[1][1] <= -1.2;
+        kernel[1][2] <= -1.2;
+        kernel[1][3] <= -1.2;
+        kernel[1][4] <= -1.2;
 
-        kernel[2][0] <= -1;
-        kernel[2][1] <= -1;
-        kernel[2][2] <= -1;
+        kernel[2][0] <= -1.2;
+        kernel[2][1] <= -1.2;
+        kernel[2][2] <= 1;
+        kernel[2][3] <= -1.2;
+        kernel[2][4] <= -1.2;
+        
+        kernel[3][0] <= -1.2;
+        kernel[3][1] <= -1.2;
+        kernel[3][2] <= -1.2;
+        kernel[3][3] <= -1.2;
+        kernel[3][4] <= -1.2;
+        
+        kernel[4][0] <= -1.2;
+        kernel[4][1] <= -1.2;
+        kernel[4][2] <= -1.2;
+        kernel[4][3] <= -1.2;
+        kernel[4][4] <= -1.2;
     end
 
     if (dv_i)
     begin
-        if (cols >= 2 & cols <= (MAX_COLS - 2) & rows >= 2 & rows <= (MAX_ROWS - 2)) 
+        // MAX_COLS because MAX_COLS +1 and +2 are 0-s
+        if (cols >= 2 & cols <= (MAX_COLS) & rows >= 2 & rows <= (MAX_ROWS)) 
         begin
-            sum_row1 = row1_data[0] * kernel[0][0] + row1_data[1] * kernel[0][1] + row1_data[2] * kernel[0][2];
-            sum_row2 = row2_data[0] * kernel[1][0] + row2_data[1] * kernel[1][1] + row2_data[2] * kernel[1][2];
-            sum_row3 = row3_data[0] * kernel[2][0] + row3_data[1] * kernel[2][1] + row3_data[2] * kernel[2][2];
-            sum_y = sum_row1 + sum_row2 + sum_row3;
+            sum_row1 <= row1_data[0] * kernel[0][0] + row1_data[1] * kernel[0][1] + row1_data[2] * kernel[0][2] + row1_data[3] * kernel[0][3] + row1_data[4] * kernel[0][4];
+            sum_row2 <= row2_data[0] * kernel[1][0] + row2_data[1] * kernel[1][1] + row2_data[2] * kernel[1][2] + row2_data[3] * kernel[1][3] + row2_data[4] * kernel[1][4];
+            sum_row3 <= row3_data[0] * kernel[2][0] + row3_data[1] * kernel[2][1] + row3_data[2] * kernel[2][2] + row3_data[3] * kernel[2][3] + row3_data[4] * kernel[2][4];
+            sum_row4 <= row4_data[0] * kernel[3][0] + row4_data[1] * kernel[3][1] + row4_data[2] * kernel[3][2] + row4_data[3] * kernel[3][3] + row4_data[4] * kernel[3][4];
+            sum_row5 <= row5_data[0] * kernel[4][0] + row5_data[1] * kernel[4][1] + row5_data[2] * kernel[4][2] + row5_data[3] * kernel[4][3] + row5_data[4] * kernel[4][4];
+            sum_y <= sum_row1 + sum_row2 + sum_row3 + sum_row4 + sum_row5;
             
             y_o_reg <= sum_y > 255 ? 255 : sum_y[7:0];
         end

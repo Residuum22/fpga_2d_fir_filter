@@ -28,9 +28,10 @@ module dp_bram
     output [7:0] dout_a, dout_b
 );
     
-reg [7:0] memory[DEPTH:0];
+reg [7:0] memory[DEPTH-1:0];
 reg [7:0] dout_reg_a, dout_reg_b;
-    
+
+// Read first 
 always @ (posedge clk)
 begin
     if (we_a)
