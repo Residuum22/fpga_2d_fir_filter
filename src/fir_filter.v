@@ -18,171 +18,171 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
-
-
+// (* mark_debug="true" *) 
 module fir_filter(
     input       clk,
     input       rst,
-    (* mark_debug="true" *) input [7:0] y_i,
+    input [7:0] y_i,
     input       dv_i,
     input       hs_i,
     input       vs_i,
     
-    (* mark_debug="true" *) output [7:0]     r_o,
+    output [7:0]     r_o,
     output [7:0]     b_o,
     output [7:0]     g_o,
-    (* mark_debug="true" *) output           dv_o,
-    (* mark_debug="true" *) output           hs_o,
-    (* mark_debug="true" *) output           vs_o
+    output           dv_o,
+    output           hs_o,
+    output           vs_o,
+    
+    output [7:0] pixel_00, pixel_01, pixel_02, pixel_03, pixel_04,
+    output [7:0] pixel_10, pixel_11, pixel_12, pixel_13, pixel_14,
+    output [7:0] pixel_20, pixel_21, pixel_22, pixel_23, pixel_24,
+    output [7:0] pixel_30, pixel_31, pixel_32, pixel_33, pixel_34,
+    output [7:0] pixel_40, pixel_41, pixel_42, pixel_43, pixel_44,
+    
+    output reg [10:0] x_index,
+    output reg [9:0] y_index,
+    
+    output hs_i_edge
     );
      
-localparam MAX_COLS = 1600;
-localparam MAX_ROWS = 900;
+localparam FILTER_H = 5;
+localparam FILTER_W = 5;
+localparam MAX_COLS = 1600+4;
+localparam MAX_ROWS = 900+4;
 
-reg [10:0] cols; // max 1600
-reg [9:0] rows; // max 900
-//************************************************************************************
-// BRAM logic START
-//************************************************************************************
-// With one port of the BRAM the data will be written into the RAM
-// With the second port of the BRAM the data will be read from the RAM
-
-// TODO check sythesis result because the with this configuration one 36Kb BRAM is used with
-// two 18Kb configuration. 2k x 9bit = 18000 bit RAM.
- 
-// 11 bit for address selection
-// 4 bit for write enable of BRAM 
-(* mark_debug="true" *) reg     [14:0]  bram_addr_wr;
-// 10 bit for address selection for the another port
-(* mark_debug="true" *) reg     [10:0]  bram_addr_rd[3:0];
-// Bram data read and write register
-(* mark_debug="true" *) wire    [7:0]   bram_data_rd[3:0];
-(* mark_debug="true" *) reg     [7:0]   bram_data_wr; 
+reg [7:0] y_o;
+reg     [14:0]  bram_addr_wr[3:0];
+reg     [10:0]  bram_addr_rd[3:0];
+wire    [7:0]   bram_data_rd[3:0];
+reg     [7:0]   bram_data_wr[3:0]; 
 
 genvar bram_i;
-generate
-    for(bram_i = 0; bram_i < 4; bram_i = bram_i + 1)
+generate 
+    for(bram_i=0;bram_i<4;bram_i=bram_i+1)
     begin
-        dp_bram
-        #(
-            .DEPTH(MAX_COLS + 4)
-        )
-        (
-            .clk(clk),
-
-            .we_a(bram_addr_wr[11+bram_i]),
+    dp_bram
+    #(
+        .DEPTH(MAX_COLS + 4)
+    )
+    dp_bram
+    (
+        .clk(clk),
+    
+        .we_a(bram_addr_wr[bram_i][11+bram_i]),
+    
+        .addr_a(bram_addr_wr[bram_i][10:0]),
+        .addr_b(bram_addr_rd[bram_i]),
         
-            .addr_a(bram_addr_wr[10:0]),
-            .addr_b(bram_addr_rd[bram_i]),
-            
-            .din_a(bram_data_wr),
-            .dout_b(bram_data_rd[bram_i])
-        );
+        .din_a(bram_data_wr[bram_i]),
+        .dout_b(bram_data_rd[bram_i])
+    );
     end
 endgenerate
 
-//************************************************************************************
-// BRAM logic END
-//************************************************************************************
-
-
-//************************************************************************************
-// Row storing START
-//************************************************************************************
-// Assign controls with one CLK delay.
-// Writing row into the BRAM
+// Edge detection logic for the hs_i signal
+reg hs_i_dly;
+always @(posedge clk)
+    hs_i_dly <= hs_i;
+begin
+assign hs_i_edge = hs_i & ~hs_i_dly;
+    
+end
+// Row shift register in the kernel
+integer i;
+reg [7:0] row0[4:0], row1[4:0], row2[4:0], row3[4:0], row4[4:0];
 always @(posedge clk)
 begin
     if (rst | vs_i)
     begin
-        rows <= 0;
-    end
-    else if (dv_i)
-    begin
-        // Saving in the ram.
-        bram_addr_wr[14:11] <= (4'b0001 << (rows % 4));  
-        cols <= cols + 1;
-        bram_addr_wr[10:0] <= cols;
-        bram_data_wr <= y_i;
-        
-        if (hs_i)
+        for(i=0;i<5;i=i+1)
         begin
-            rows <= rows + 1;
-            cols <= 0;
+            row0[i] <= 0;
+            row1[i] <= 0;
+            row2[i] <= 0;
+            row3[i] <= 0;
+            row4[i] <= 0;
         end
+        x_index <= 0;
+        y_index <= 0;
     end
-end
-
-////************************************************************************************
-//// Row storing END
-////************************************************************************************
-
-////************************************************************************************
-//// Convulution and write out START
-////************************************************************************************
-//// For the convolution I need for dsp blocks.
-reg [7:0] row1_data[4:0], row2_data[4:0], row3_data[4:0], row4_data[4:0], row5_data[4:0];
-
-integer ii;
-
-always @(posedge clk)
-begin
-    // First two row is only getting the image
-    if (rows >= 4 & dv_i)
-    begin
-        for (ii = 0; ii < 4; ii = ii + 1)
-            bram_addr_rd[ii] = cols;
-            
-        // Collecting the frame m-2
-        // Check this because it should be  shift register.
-        for (ii = 0; ii < 5; ii = ii + 1)
-        begin
-            row1_data[ii] = ii==0 ? bram_data_rd[0] : row1_data[ii-1];
-            row2_data[ii] = ii==0 ? bram_data_rd[1] : row2_data[ii-1];
-            row3_data[ii] = ii==0 ? bram_data_rd[2] : row3_data[ii-1];
-            row4_data[ii] = ii==0 ? bram_data_rd[3] : row4_data[ii-1];
-            row5_data[ii] = ii==0 ? y_i : row5_data[ii-1];
-        end
-    end
-end
-
-// Calculation with dsps
-// Creating a kernel with 25 element
-reg signed [7:0] kernel[24:0];
-(* mark_debug="true" *) reg [31:0] sum_row1, sum_row2, sum_row3, sum_row4, sum_row5, sum_y;
-(* mark_debug="true" *) reg [7:0] y_o_reg;
-
-always @(posedge clk)
-begin
-    if (rst)
-    begin
-        for (ii = 0; ii < 25; ii = ii + 1)
-        begin
-            kernel[ii] = -1.2;
-        end
-        kernel[13] = 1;
-    end
-
     if (dv_i)
     begin
-        // MAX_COLS because MAX_COLS +1 and +2 are 0-s
-        if (cols >= 2 & cols <= (MAX_COLS) & rows >= 2 & rows <= (MAX_ROWS)) 
+        for(i=0;i<5;i=i+1)
         begin
-            sum_row1 <= row1_data[0] * kernel[0] + row1_data[1] * kernel[1] + row1_data[2] * kernel[2] + row1_data[3] * kernel[3] + row1_data[4] * kernel[4];
-            sum_row2 <= row2_data[0] * kernel[5] + row2_data[1] * kernel[6] + row2_data[2] * kernel[7] + row2_data[3] * kernel[8] + row2_data[4] * kernel[9];
-            sum_row3 <= row3_data[0] * kernel[10] + row3_data[1] * kernel[11] + row3_data[2] * kernel[12] + row3_data[3] * kernel[13] + row3_data[4] * kernel[14];
-            sum_row4 <= row4_data[0] * kernel[15] + row4_data[1] * kernel[16] + row4_data[2] * kernel[17] + row4_data[3] * kernel[18] + row4_data[4] * kernel[19];
-            sum_row5 <= row5_data[0] * kernel[20] + row5_data[1] * kernel[21] + row5_data[2] * kernel[22] + row5_data[3] * kernel[23] + row5_data[4] * kernel[24];
-            sum_y <= sum_row1 + sum_row2 + sum_row3 + sum_row4 + sum_row5;
+            // Indexing 0-bottom row
+            // 4 top row shift register
+            row0[i] <= (i==0) ? y_i : row0[i-1];
             
-            y_o_reg <= sum_y > 255 ? 255 : sum_y[7:0];
+            bram_addr_rd[0] <= x_index;
+            row1[i] <= (i==0) ? bram_data_rd[0] : row1[i-1];
+            
+            bram_addr_rd[1] <= x_index;
+            row2[i] <= (i==0) ? bram_data_rd[1] : row2[i-1];
+            
+            bram_addr_rd[2] <= x_index;
+            row3[i] <= (i==0) ? bram_data_rd[2] : row3[i-1];
+            
+            bram_addr_rd[3] <= x_index;
+            row4[i] <= (i==0) ? bram_data_rd[3] : row4[i-1];
         end
+        
+        bram_addr_wr[0][10:0] <= x_index;
+        bram_data_wr[0] <= row1[4];
+        bram_addr_wr[0][14:11] <= 4'b0001;
+        
+        bram_addr_wr[1][10:0] <= x_index;
+        bram_data_wr[1] <= row2[4];
+        bram_addr_wr[1][14:11] <= 4'b0010;
+        
+        bram_addr_wr[2][10:0] <= x_index;
+        bram_data_wr[2] = row3[4];
+        bram_addr_wr[2][14:11] <= 4'b0100;
+        
+        bram_addr_wr[3][10:0] <= x_index;
+        bram_data_wr[3] <= row4[4];
+        bram_addr_wr[3][14:11] <= 4'b1000;
+        
+        x_index <= x_index + 1;
+    end
+    if (hs_i_edge)
+    begin
+        y_index <= y_index + 1;
+        x_index <= 0;
     end
 end
 
+assign pixel_00 = row0[0];
+assign pixel_01 = row0[1];
+assign pixel_02 = row0[2];
+assign pixel_03 = row0[3];
+assign pixel_04 = row0[4];
+
+assign pixel_10 = row1[0];
+assign pixel_11 = row1[1];
+assign pixel_12 = row1[2];
+assign pixel_13 = row1[3];
+assign pixel_14 = row1[4];
+
+assign pixel_20 = row2[0];
+assign pixel_21 = row2[1];
+assign pixel_22 = row2[2];
+assign pixel_23 = row2[3];
+assign pixel_24 = row2[4];
+
+assign pixel_30 = row3[0];
+assign pixel_31 = row3[1];
+assign pixel_32 = row3[2];
+assign pixel_33 = row3[3];
+assign pixel_34 = row3[4];
+
+assign pixel_40 = row4[0];
+assign pixel_41 = row4[1];
+assign pixel_42 = row4[2];
+assign pixel_43 = row4[3];
+assign pixel_44 = row4[4];
 
 reg dv_o_reg, hs_o_reg, vs_o_reg;
-
 // Assigning the controls, but I need to delay them with one CLK
 always @(posedge clk)
 begin
@@ -191,9 +191,9 @@ begin
     vs_o_reg <= vs_i;
 end
 
-assign r_o = y_o_reg;
-assign g_o = y_o_reg;
-assign b_o = y_o_reg;
+assign r_o = y_o;
+assign g_o = y_o;
+assign b_o = y_o;
 
 assign dv_o = dv_o_reg;
 assign hs_o = hs_o_reg;
