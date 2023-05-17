@@ -32,10 +32,7 @@ reg [7:0] memory[DEPTH-1:0];
 reg [7:0] dout_reg_b;
 
 integer i;
-reg [10:0] cntr;
-
 initial begin
-  cntr = 0;
   for (i=0;i<DEPTH;i=i+1)
     memory[i] = 0;
 end
