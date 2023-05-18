@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<item key="sdx.custom.platform.repository.locations" value="C:\Users\mihal\development\fpga_2d_fir_filter\Firmware\RemoteSystemsTempFiles;C:\Users\mihal\development\fpga_2d_fir_filter\Firmware;C:\Users\mihal\development\fpga_2d_fir_filter\Firmware\fir_project_top\export\fir_project_top"/>
+</section>
