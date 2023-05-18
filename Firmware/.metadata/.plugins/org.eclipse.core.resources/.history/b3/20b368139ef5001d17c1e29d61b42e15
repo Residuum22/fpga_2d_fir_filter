@@ -91,11 +91,11 @@ int main()
 							&UartLite,
 							RecvBuffer + ReceivedCount,
 							UART_BUFFER_SIZE - ReceivedCount);
-		printf(UartLite[ReceivedCount]);
+
 		if (UartLite[ReceivedCount] == '\n')
 		{
 			dataValid = true;
-
+			print(UartLite[ReceivedCount]);
 		}
 	}
 

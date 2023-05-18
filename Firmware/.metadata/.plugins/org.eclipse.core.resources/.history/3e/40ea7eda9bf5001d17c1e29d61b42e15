@@ -51,7 +51,6 @@
 #include "xuartlite.h"
 #include "xparameters.h"
 #include <math.h>
-#include "stdlib.h"
 
 #define FIXED_POINT_FRACTIONAL_BITS 8
 #define UART_DEVICE_ID		XPAR_AXI_UARTLITE_0_DEVICE_ID
@@ -89,14 +88,11 @@ int main()
 	{
 		ReceivedCount += XUartLite_Recv(
 							&UartLite,
-							RecvBuffer + ReceivedCount,
-							UART_BUFFER_SIZE - ReceivedCount);
-		printf(UartLite[ReceivedCount]);
-		if (UartLite[ReceivedCount] == '\n')
-		{
-			dataValid = true;
+						   RecvBuffer + ReceivedCount,
+						   UART_BUFFER_SIZE - ReceivedCount);
 
-		}
+		if (ReceivedCount == UART_BUFFER_SIZE)
+			dataValid = true;
 	}
 
     cleanup_platform();

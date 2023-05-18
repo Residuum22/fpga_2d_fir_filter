@@ -48,14 +48,51 @@
 #include <stdio.h>
 #include "platform.h"
 #include "xil_printf.h"
+#include "xuartlite.h"
+#include "xparameters.h"
+#include <math.h>
 
+#define FIXED_POINT_FRACTIONAL_BITS 8
+#define UART_DEVICE_ID		XPAR_AXI_UARTLITE_0_DEVICE_ID
+#define UART_BUFFER_SIZE	2000
+#define COEFF_BUFFER_SIZE	25
+
+static XUartLite UARTLite;
+u8 RecvBuffer[UART_BUFFER_SIZE];
+typedef fixed_point_t u16;
+
+inline i16 float2fixed_point(float number)
+{
+	return (fixed_point_t)(round(number * (1 << FIXED_POINT_FRACTIONAL_BITS)));
+}
 
 int main()
 {
     init_platform();
 
-    print("Hello World\n\r");
-    print("Successfully ran Hello World application");
+    int Status;
+    int ReceivedCount = 0;
+    boolean dataValid;
+
+	Status = XUartLite_Initialize(&UARTLite, UART_DEVICE_ID);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+	Status = XUartLite_SelfTest(&UartLite);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+	while(1)
+	{
+		ReceivedCount += XUartLite_Recv(&UartLite,
+							   RecvBuffer + ReceivedCount,
+							   UART_BUFFER_SIZE - ReceivedCount);
+		if (ReceivedCount == UART_BUFFER_SIZE)
+			dataValid = true;
+	}
+
     cleanup_platform();
     return 0;
 }

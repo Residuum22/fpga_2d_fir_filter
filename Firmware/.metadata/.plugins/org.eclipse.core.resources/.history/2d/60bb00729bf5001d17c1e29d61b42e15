@@ -50,8 +50,6 @@
 #include "xil_printf.h"
 #include "xuartlite.h"
 #include "xparameters.h"
-#include <math.h>
-#include "stdlib.h"
 
 #define FIXED_POINT_FRACTIONAL_BITS 8
 #define UART_DEVICE_ID		XPAR_AXI_UARTLITE_0_DEVICE_ID
@@ -60,9 +58,8 @@
 
 static XUartLite UARTLite;
 u8 RecvBuffer[UART_BUFFER_SIZE];
-typedef i16 fixed_point_t;
 
-inline fixed_point_t float2fixed_point(float number)
+inline i16 float2fixed_point(float number)
 {
 	return (fixed_point_t)(round(number * (1 << FIXED_POINT_FRACTIONAL_BITS)));
 }
@@ -87,16 +84,11 @@ int main()
 
 	while(1)
 	{
-		ReceivedCount += XUartLite_Recv(
-							&UartLite,
-							RecvBuffer + ReceivedCount,
-							UART_BUFFER_SIZE - ReceivedCount);
-		printf(UartLite[ReceivedCount]);
-		if (UartLite[ReceivedCount] == '\n')
-		{
+		ReceivedCount += XUartLite_Recv(&UartLite,
+							   RecvBuffer + ReceivedCount,
+							   UART_BUFFER_SIZE - ReceivedCount);
+		if (ReceivedCount == UART_BUFFER_SIZE)
 			dataValid = true;
-
-		}
 	}
 
     cleanup_platform();
