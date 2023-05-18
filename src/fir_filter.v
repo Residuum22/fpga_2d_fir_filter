@@ -20,24 +20,27 @@
 //////////////////////////////////////////////////////////////////////////////////
 // (* mark_debug="true" *) 
 module fir_filter(
-    input       clk,
-    input       rst,
-    input [7:0] y_i,
-    input       dv_i,
-    input       hs_i,
-    input       vs_i,
+    input           clk,
+    input           rst,
+    input [7:0]     y_i,
+    input           dv_i,
+    input           hs_i,
+    input           vs_i,
     
-    output [7:0]     r_o,
-    output [7:0]     b_o,
-    output [7:0]     g_o,
-    output           dv_o,
-    output           hs_o,
-    output           vs_o,
+    output [7:0]    r_o,
+    output [7:0]    b_o,
+    output [7:0]    g_o,
+    output          dv_o,
+    output          hs_o,
+    output          vs_o,
     
     output reg [10:0] x_index,
     output reg [9:0] y_index,
     
-    output hs_i_edge
+    output hs_i_edge,
+    
+    input [31:0] filter_coeff_data,
+    output reg [5:0] filter_coeff_addr
     );
 
 wire [7:0] p0, p1, p2, p3, p4;
