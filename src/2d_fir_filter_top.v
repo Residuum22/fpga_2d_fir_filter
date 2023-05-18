@@ -58,14 +58,17 @@ module fir_project_top(
 wire [5:0] filter_coeff_addr;
 wire [31:0] filter_coeff_data;
 
-controller_design_wrapper microblaze(
-    .BRAM_PORTB_0_addr(filter_coeff_addr),
-    .BRAM_PORTB_0_clk(clk100M),
-    .BRAM_PORTB_0_dout(filter_coeff_data),
-    .BRAM_PORTB_0_en(1),
-    .clk100M(clk100M),
-    .rstbtn(rstbtn)
-    );
+fir_microblaze_wrapper
+(
+   .clk100M(clk100M),
+   .rstbtn(rstbt),
+   .BRAM_PORTB_0_addr(filter_coeff_addr),
+   .BRAM_PORTB_0_clk(clk100M),
+   .BRAM_PORTB_0_dout(filter_coeff_data),
+   .BRAM_PORTB_0_en(1),
+   .BRAM_PORTB_0_rst(rstbt),
+   .BRAM_PORTB_0_we(0)
+);
 
 //******************************************************************************
 //* Generating the 200 MHz reference clock for the IDELAYCTRL.                 *
@@ -182,7 +185,7 @@ wire tx_dv, tx_hs, tx_vs;
 
 fir_filter fir_filter_0(
     .clk(rx_clk),
-    .rst(rst),
+    .rst(rstbt),
     .y_i(y),
     .dv_i(y_dv),
     .hs_i(y_hs),

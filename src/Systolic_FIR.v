@@ -166,35 +166,40 @@ module cascade_systolic_fir
     input signed [16:0] coeff40, coeff41, coeff42, coeff43, coeff44,
 
     output [7:0] out_pixel,
-    output out_valid
+    output out_valid,
+    
+    input [31:0] filter_coeff_data,
+    
+    input [5:0] filter_coeff_addr
 );
 
 wire [16:0] coeff [24:0];
-assign coeff[0] = coeff00;
-assign coeff[1] = coeff01;
-assign coeff[2] = coeff02;
-assign coeff[3] = coeff03;
-assign coeff[4] = coeff04;
-assign coeff[5] = coeff10;
-assign coeff[6] = coeff11;
-assign coeff[7] = coeff12;
-assign coeff[8] = coeff13;
-assign coeff[9] = coeff14;
-assign coeff[10] = coeff20;
-assign coeff[11] = coeff21;
-assign coeff[12] = coeff22;
-assign coeff[13] = coeff23;
-assign coeff[14] = coeff24;
-assign coeff[15] = coeff30;
-assign coeff[16] = coeff31;
-assign coeff[17] = coeff32;
-assign coeff[18] = coeff33;
-assign coeff[19] = coeff34;
-assign coeff[20] = coeff40;
-assign coeff[21] = coeff41;
-assign coeff[22] = coeff42;
-assign coeff[23] = coeff43;
-assign coeff[24] = coeff44;
+
+assign coeff[0] = 16'h0000;
+assign coeff[1] = 16'h0000;
+assign coeff[2] = 16'hff00;
+assign coeff[3] = 16'h0000;
+assign coeff[4] = 16'h0000;
+assign coeff[5] = 16'h0000;
+assign coeff[6] = 16'hff00;
+assign coeff[7] = 16'hfe00;
+assign coeff[8] = 16'hff00;
+assign coeff[9] = 16'h0000;
+assign coeff[10] = 16'hff00;
+assign coeff[11] = 16'hfe00;
+assign coeff[12] = 16'h1000;
+assign coeff[13] = 16'hfe00;
+assign coeff[14] = 16'hff00;
+assign coeff[15] = 16'h0000;
+assign coeff[16] = 16'hff00;
+assign coeff[17] = 16'hfe00;
+assign coeff[18] = 16'hff00;
+assign coeff[19] = 16'h0000;
+assign coeff[20] = 16'h0000;
+assign coeff[21] = 16'h0000;
+assign coeff[22] = 16'hfe00;
+assign coeff[23] = 16'h0000;
+assign coeff[24] = 16'h0000;
 
 wire [7:0] pixels [4:0];
 assign pixels[0] = pixel0;
@@ -211,6 +216,7 @@ genvar i;
 
 generate
     for(i = 0; i < 5; i = i + 1)
+    begin
         Systolic_FIR filter
         (
             .clk(clk),
@@ -225,6 +231,7 @@ generate
             .out_pixel(sub_res[i]),
             .out_valid(out_valids[i])
         );
+    end
 endgenerate
 
 reg [38:0] sum;
