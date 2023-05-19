@@ -22,6 +22,7 @@
 
 module bram2coeff(
     input clk,
+    input rst,
     input [31:0] filter_coeff_data,
     output [5:0] filter_coeff_addr,
     input vs_i,
@@ -43,14 +44,21 @@ begin
     vs_i_dly <= vs_i;
 end
 
-assign vs_i_edge = ~vs_i & vs_i_dly;
+assign vs_i_edge = vs_i & ~vs_i_dly;
 
 reg [5:0] addr;
 reg en = 0;
 // Debug output
 assign en_d = en;
 
-reg signed [15:0] coeff [24:0];
+reg signed [15:0] coeff [25:0];
+integer i;
+initial
+begin
+    for(i=0;i<25;i=i+1)
+        coeff[i] = 0;
+end
+
 always @(posedge clk)
 begin
     if (vs_i_edge)
@@ -61,12 +69,16 @@ begin
     
     if (en)
     begin
+        coeff[addr-1] <= filter_coeff_data[15:0];
         addr <= addr + 1;
-        coeff[addr] <= filter_coeff_data[15:0];
+       
     end
     
-    if (addr == 25 - 1)
-        en <= 0;        
+    if (addr == 25)
+    begin
+        en <= 0;
+        addr <= 0; 
+    end   
 end
 // arrd counter set the addr of the bram, so the data put into the coeff
 assign filter_coeff_addr = addr;

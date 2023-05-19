@@ -51,14 +51,17 @@ module fir_project_top(
    input  wire       hdmi_tx_cec,
    input  wire       hdmi_tx_hpdn,
    input  wire       hdmi_tx_scl,
-   input  wire       hdmi_tx_sda
+   input  wire       hdmi_tx_sda,
+   
+   output wire      uart_rtl_0_txd,
+   input wire      uart_rtl_0_rxd
 );
 
 
 wire [5:0] filter_coeff_addr;
 wire [31:0] filter_coeff_data;
 
-fir_microblaze_bd_wrapper microbalze
+fir_microblaze_wrapper microbalze
 (
    .clk100M(clk100M),
    .rstbt(rstbt),
@@ -67,7 +70,9 @@ fir_microblaze_bd_wrapper microbalze
    .BRAM_PORTB_0_dout(filter_coeff_data),
    .BRAM_PORTB_0_en(1),
    .BRAM_PORTB_0_rst(rstbt),
-   .BRAM_PORTB_0_we(0)
+   .BRAM_PORTB_0_we(0),
+   .uart_rtl_0_rxd(uart_rtl_0_rxd),
+   .uart_rtl_0_txd(uart_rtl_0_txd)
 );
 
 //******************************************************************************

@@ -49,11 +49,42 @@ wire [5:0] filter_bram_addr;
 assign filter_coeff_data = filter_bram_addr;
 assign filter_bram_data = filter_bram_data;
 
+wire  signed [15:0] coeff00, coeff01, coeff02, coeff03, coeff04;
+wire  signed [15:0] coeff10, coeff11, coeff12, coeff13, coeff14;
+wire  signed [15:0] coeff20, coeff21, coeff22, coeff23, coeff24;
+wire  signed [15:0] coeff30, coeff31, coeff32, coeff33, coeff34;
+wire  signed [15:0] coeff40, coeff41, coeff42, coeff43, coeff44;
+
 bram2coeff coefficient_storage(
     .clk(clk),
     .filter_coeff_data(filter_bram_data),
     .filter_coeff_addr(filter_bram_addr),
-    .vs_i(vs_i)
+    .vs_i(vs_i),
+    .coeff00(coeff00), 
+    .coeff01(coeff01), 
+    .coeff02(coeff02), 
+    .coeff03(coeff03), 
+    .coeff04(coeff04),
+    .coeff10(coeff10), 
+    .coeff11(coeff11),
+    .coeff12(coeff12),
+    .coeff13(coeff13),
+    .coeff14(coeff14),
+    .coeff20(coeff20),
+    .coeff21(coeff21),
+    .coeff22(coeff22),
+    .coeff23(coeff23), 
+    .coeff24(coeff24),
+    .coeff30(coeff30), 
+    .coeff31(coeff31), 
+    .coeff32(coeff32), 
+    .coeff33(coeff33), 
+    .coeff34(coeff34),
+    .coeff40(coeff40),
+    .coeff41(coeff41),
+    .coeff42(coeff42),
+    .coeff43(coeff43),
+    .coeff44(coeff44)
 );
 
 
@@ -91,31 +122,31 @@ cascade_systolic_fir systolic_fir(
     .pixel2(p2),
     .pixel3(p3),
     .pixel4(p4),
-    .coeff00(16'h0000),
-	.coeff01(16'h0000),
-	.coeff02(16'hFF00),
-	.coeff03(16'h0000),
-	.coeff04(16'h0000),
-	.coeff10(16'h0000),
-	.coeff11(16'hFF00),
-	.coeff12(16'hFE00),
-	.coeff13(16'hFF00),
-	.coeff14(16'h0000),
-	.coeff20(16'hFF00),
-	.coeff21(16'hFE00),
-	.coeff22(16'h1000),
-	.coeff23(16'hFE00),
-	.coeff24(16'hFF00),
-	.coeff30(16'h0000),
-	.coeff31(16'hFF00),
-	.coeff32(16'hFE00),
-	.coeff33(16'hFF00),
-	.coeff34(16'h0000),
-	.coeff40(16'h0000),
-	.coeff41(16'h0000),
-	.coeff42(16'hFF00),
-	.coeff43(16'h0000),
-	.coeff44(16'h0000),
+    .coeff00(coeff00), 
+    .coeff01(coeff01), 
+    .coeff02(coeff02), 
+    .coeff03(coeff03), 
+    .coeff04(coeff04),
+    .coeff10(coeff10), 
+    .coeff11(coeff11),
+    .coeff12(coeff12),
+    .coeff13(coeff13),
+    .coeff14(coeff14),
+    .coeff20(coeff20),
+    .coeff21(coeff21),
+    .coeff22(coeff22),
+    .coeff23(coeff23), 
+    .coeff24(coeff24),
+    .coeff30(coeff30), 
+    .coeff31(coeff31), 
+    .coeff32(coeff32), 
+    .coeff33(coeff33), 
+    .coeff34(coeff34),
+    .coeff40(coeff40),
+    .coeff41(coeff41),
+    .coeff42(coeff42),
+    .coeff43(coeff43),
+    .coeff44(coeff44),
 
     .out_pixel(y_o)
 );
