@@ -26,18 +26,18 @@ module fir_dsp
 
     input  signed [16:0] a,
 
-    input  signed [16:0] b,
-    input  signed [38:0] c,
+    input  signed [15:0] b,
+    input  signed [35:0] c,
     // DSP block output
     output signed [16:0] a_out,
-    output signed [38:0] p
+    output signed [35:0] p
 );
 
 // necessary buffers within block
 reg signed [16:0] a_inbuff [INPUT_DELAY:0];
-reg signed [16:0] b_inbuff; 
-reg signed [32:0] mul;
-reg signed [38:0] p_outbuff;
+reg signed [15:0] b_inbuff; 
+reg signed [30:0] mul;
+reg signed [35:0] p_outbuff;
 
 // input buffers
 always@(posedge clk)
@@ -70,18 +70,18 @@ module Systolic_FIR(
     
     input [7:0] pixel,
     
-    input signed [16:0] coeff0, coeff1, coeff2, coeff3, coeff4,
+    input signed [15:0] coeff0, coeff1, coeff2, coeff3, coeff4,
     
-    output [38:0] out_pixel,
+    output signed [35:0] out_pixel,
     output out_valid
     );
 
 // intrenal wiring
-wire [16:0] pixel_extended;
-wire [16:0] a_cascade [3:0];
-wire [38:0] p_cascade [4:0];
+wire signed [16:0] pixel_extended;
+wire signed [16:0] a_cascade [3:0];
+wire signed [35:0] p_cascade [4:0];
 
-assign pixel_extended = {1'b0, pixel, 8'h0x00};
+assign pixel_extended = {1'b0, pixel, 8'h00};
     
 // dsp blocks cascaded into the systolic FIR line
 fir_dsp #(.INPUT_DELAY(0)) fir0 
@@ -159,47 +159,43 @@ module cascade_systolic_fir
 
     input [7:0] pixel0, pixel1, pixel2, pixel3, pixel4,
     
-    input signed [16:0] coeff00, coeff01, coeff02, coeff03, coeff04,
-    input signed [16:0] coeff10, coeff11, coeff12, coeff13, coeff14,
-    input signed [16:0] coeff20, coeff21, coeff22, coeff23, coeff24,
-    input signed [16:0] coeff30, coeff31, coeff32, coeff33, coeff34,
-    input signed [16:0] coeff40, coeff41, coeff42, coeff43, coeff44,
+    input signed [15:0] coeff00, coeff01, coeff02, coeff03, coeff04,
+    input signed [15:0] coeff10, coeff11, coeff12, coeff13, coeff14,
+    input signed [15:0] coeff20, coeff21, coeff22, coeff23, coeff24,
+    input signed [15:0] coeff30, coeff31, coeff32, coeff33, coeff34,
+    input signed [15:0] coeff40, coeff41, coeff42, coeff43, coeff44,
 
     output [7:0] out_pixel,
-    output out_valid,
-    
-    input [31:0] filter_coeff_data,
-    
-    input [5:0] filter_coeff_addr
+    output out_valid
 );
 
-wire [16:0] coeff [24:0];
+wire [15:0] coeff [24:0];
 
-assign coeff[0] = 16'h0000;
-assign coeff[1] = 16'h0000;
-assign coeff[2] = 16'hff00;
-assign coeff[3] = 16'h0000;
-assign coeff[4] = 16'h0000;
-assign coeff[5] = 16'h0000;
-assign coeff[6] = 16'hff00;
-assign coeff[7] = 16'hfe00;
-assign coeff[8] = 16'hff00;
-assign coeff[9] = 16'h0000;
-assign coeff[10] = 16'hff00;
-assign coeff[11] = 16'hfe00;
-assign coeff[12] = 16'h1000;
-assign coeff[13] = 16'hfe00;
-assign coeff[14] = 16'hff00;
-assign coeff[15] = 16'h0000;
-assign coeff[16] = 16'hff00;
-assign coeff[17] = 16'hfe00;
-assign coeff[18] = 16'hff00;
-assign coeff[19] = 16'h0000;
-assign coeff[20] = 16'h0000;
-assign coeff[21] = 16'h0000;
-assign coeff[22] = 16'hfe00;
-assign coeff[23] = 16'h0000;
-assign coeff[24] = 16'h0000;
+assign coeff[0] = coeff00;
+assign coeff[1] = coeff01;
+assign coeff[2] = coeff02;
+assign coeff[3] = coeff03;
+assign coeff[4] = coeff04;
+assign coeff[5] = coeff10;
+assign coeff[6] = coeff11;
+assign coeff[7] = coeff12;
+assign coeff[8] = coeff13;
+assign coeff[9] = coeff14;
+assign coeff[10] = coeff20;
+assign coeff[11] = coeff21;
+assign coeff[12] = coeff22;
+assign coeff[13] = coeff23;
+assign coeff[14] = coeff24;
+assign coeff[15] = coeff30;
+assign coeff[16] = coeff31;
+assign coeff[17] = coeff32;
+assign coeff[18] = coeff33;
+assign coeff[19] = coeff34;
+assign coeff[20] = coeff40;
+assign coeff[21] = coeff41;
+assign coeff[22] = coeff42;
+assign coeff[23] = coeff43;
+assign coeff[24] = coeff44;
 
 wire [7:0] pixels [4:0];
 assign pixels[0] = pixel0;
@@ -210,7 +206,7 @@ assign pixels[4] = pixel4;
 
 wire [4:0] out_valids;
 
-wire [38:0] sub_res [4:0];
+wire signed [35:0] sub_res [4:0];
 
 genvar i;
 
@@ -234,7 +230,7 @@ generate
     end
 endgenerate
 
-reg [38:0] sum;
+reg signed [35:0] sum;
 
 always@(posedge clk)
     sum <= sub_res[0] + sub_res[1] + sub_res[2] + sub_res[3] + sub_res[4];
@@ -248,7 +244,7 @@ else
     counter <= out_valids[0];
     
 assign out_valid = counter;
-assign out_pixel = sum[38] == 1 ? 8'h0x00 : (sum > 39'h0x0000FF0000 ? 8'h0xFF : sum[24:16]);
+assign out_pixel = sum[35] == 1 ? 8'h00 : (sum > 39'h0000FF0000 ? 8'hFF : sum[24:16]);
 
 
 
