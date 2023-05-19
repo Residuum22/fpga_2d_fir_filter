@@ -40,11 +40,13 @@ module fir_filter(
     output hs_i_edge,
     
     input [31:0] filter_coeff_data,
-    output reg [5:0] filter_coeff_addr
+    wire filter_coeff_addr
     );
 
 wire [7:0] p0, p1, p2, p3, p4;
 wire [7:0] y_o;
+
+wire dv_y, vs_y, hs_y;
 
 storage pixel_buffer(
     .clk(clk),
@@ -54,9 +56,9 @@ storage pixel_buffer(
     .hs_i(hs_i),
     .vs_i(vs_i),
     
-    .dv_o(dv_o),
-    .hs_o(hs_o),
-    .vs_o(vs_o),
+    .dv_o(dv_y),
+    .hs_o(hs_y),
+    .vs_o(vs_y),
     
     .p0(p0),
     .p1(p1),
@@ -76,6 +78,7 @@ cascade_systolic_fir systolic_fir(
     .pixel3(p3),
     .pixel4(p4),
     
+    .vs_i(vs_y),
     .filter_coeff_data(filter_coeff_data),
     .filter_coeff_addr(filter_coeff_addr),
 
@@ -86,8 +89,8 @@ assign r_o = y_o;
 assign g_o = y_o;
 assign b_o = y_o;
 
-assign dv_o = dv_i;
-assign vs_o = vs_i;
-assign hs_o = hs_i;
+assign dv_o = dv_y;
+assign vs_o = vs_y;
+assign hs_o = hs_y;
 
 endmodule

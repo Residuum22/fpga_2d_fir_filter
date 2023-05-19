@@ -174,11 +174,11 @@ begin
     end
     default:
     begin
-        p0_reg <= 0;
-        p1_reg <= 0;
-        p2_reg <= 0;
-        p3_reg <= 0;
-        p4_reg <= 0;
+        p0_reg <= 8'bZ;
+        p1_reg <= 8'bZ;
+        p2_reg <= 8'bZ;
+        p3_reg <= 8'bZ;
+        p4_reg <= 8'bZ;
     end
     endcase
 end
@@ -189,21 +189,22 @@ assign p2 = p2_reg;
 assign p3 = p3_reg;
 assign p4 = p4_reg;
 
-reg dv_o_reg, hs_o_reg, vs_o_reg;
+reg dv_o_reg[1:0], hs_o_reg[1:0], vs_o_reg[1:0];
 // Assigning the controls, but I need to delay them with one CLK
-always @(posedge clk)
+
+always @ (posedge clk)
 begin
-    dv_o_reg <= dv_i;
-    hs_o_reg <= hs_i;
-    vs_o_reg <= vs_i;
+    for (i=0;i<2;i=i+1)
+    begin
+        dv_o_reg[i] <= (i==0) ? dv_i : dv_o_reg[i-1];
+        hs_o_reg[i] <= (i==0) ? hs_i : hs_o_reg[i-1];
+        vs_o_reg[i] <= (i==0) ? vs_i : vs_o_reg[i-1];
+    end
 end
 
-assign r_o = y_o;
-assign g_o = y_o;
-assign b_o = y_o;
-
-assign hs_o = hs_o_reg;
-assign vs_o = vs_o_reg;
+assign hs_o = hs_o_reg[1];
+assign vs_o = vs_o_reg[1];
+assign dv_o = dv_o_reg[1];
 //************************************************************************************
 // Convulution and write out END
 //************************************************************************************
