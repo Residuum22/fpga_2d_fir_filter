@@ -58,10 +58,10 @@ module fir_project_top(
 wire [5:0] filter_coeff_addr;
 wire [31:0] filter_coeff_data;
 
-fir_microblaze_wrapper
+fir_microblaze_bd_wrapper microbalze
 (
    .clk100M(clk100M),
-   .rstbtn(rstbt),
+   .rstbt(rstbt),
    .BRAM_PORTB_0_addr(filter_coeff_addr),
    .BRAM_PORTB_0_clk(clk100M),
    .BRAM_PORTB_0_dout(filter_coeff_data),
