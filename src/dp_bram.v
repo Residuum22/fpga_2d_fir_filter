@@ -20,16 +20,17 @@
 //////////////////////////////////////////////////////////////////////////////////
 module dp_bram 
 #(
-    parameter DEPTH = 2000
+    parameter DEPTH = 2000,
+    parameter WIDTH = 8
 )(
     input clk, we_a,
     input [10:0] addr_a, addr_b,
-    input [ 7:0] din_a, 
-    output [7:0] dout_b
+    input [WIDTH-1:0] din_a, 
+    output [WIDTH-1:0] dout_b
 );
     
-reg [7:0] memory[DEPTH-1:0];
-reg [7:0] dout_reg_b;
+reg [WIDTH-1:0] memory[DEPTH-1:0];
+reg [WIDTH-1:0] dout_reg_b;
 
 integer i;
 initial begin

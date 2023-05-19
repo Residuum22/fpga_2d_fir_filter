@@ -40,8 +40,22 @@ module fir_filter(
     output hs_i_edge,
     
     input [31:0] filter_coeff_data,
-    wire filter_coeff_addr
+    output [5:0] filter_coeff_addr
     );
+
+wire [31:0] filter_bram_data;
+wire [5:0] filter_bram_addr;
+
+assign filter_coeff_data = filter_bram_addr;
+assign filter_bram_data = filter_bram_data;
+
+bram2coeff coefficient_storage(
+    .clk(clk),
+    .filter_coeff_data(filter_bram_data),
+    .filter_coeff_addr(filter_bram_addr),
+    .vs_i(vs_i)
+);
+
 
 wire [7:0] p0, p1, p2, p3, p4;
 wire [7:0] y_o;
