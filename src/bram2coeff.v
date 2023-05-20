@@ -25,10 +25,13 @@ module bram2coeff(
     input rst,
     input vs_i,
     
-    input [31:0] haddr,
-    input [31:0] hwdata,
-    output hready,
-    input hwrite,
+    input [31:0] filter_addr,
+    input filter_addr_valid, 
+    output filter_addr_ready,
+
+    input [31:0] filter_data,
+    input filter_data_valid, 
+    output filter_data_ready,
     
     output signed [15:0] coeff00, coeff01, coeff02, coeff03, coeff04,
     output signed [15:0] coeff10, coeff11, coeff12, coeff13, coeff14,
@@ -51,11 +54,11 @@ reg [5:0] addr;
 reg en = 0;
 wire [15:0] filter_coeff_data;
 
-reg [31:0] haddr_dly;
-always @(posedge clk)
-begin
-    haddr_dly <= haddr;
-end
+//reg [31:0] filter_addr_dly;
+//always @(posedge clk)
+//begin
+//    filter_addr_dly <= filter_addr;
+//end
 
 dp_bram
     #(
@@ -66,12 +69,12 @@ dp_bram
     (
         .clk(clk),
     
-        .we_a(hwrite),
+        .we_a(filter_data_valid),
     
-        .addr_a(haddr_dly[10:0]),
+        .addr_a(filter_addr[10:0]),
         .addr_b({5'b00000, addr}),
         
-        .din_a(hwdata[15:0]),
+        .din_a(filter_data[15:0]),
         .dout_b(filter_coeff_data)
     );
 
@@ -106,7 +109,8 @@ begin
     end   
 end
 
-assign hready = 1'b1;
+assign filter_addr_ready = 1'b1;
+assign filter_data_ready = 1'b1;
 
 assign coeff00 = coeff[0];
 assign coeff01 = coeff[1];

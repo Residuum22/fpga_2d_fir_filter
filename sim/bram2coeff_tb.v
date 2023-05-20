@@ -34,18 +34,23 @@ wire  signed [15:0] coeff40, coeff41, coeff42, coeff43, coeff44;
 reg [7:0] coeff [24:0];
 reg vs_i;
 
-reg [31:0] hwdata_tb, haddr_tb;
-reg hwrite;
-wire hready;
+reg [31:0] filter_data, filter_addr;
+reg filter_addr_valid, filter_data_valid;
+wire filter_addr_ready, filter_data_ready;
 
 bram2coeff uut(
     .clk(clk),
     .rst(rst),
     .vs_i(vs_i),
-    .haddr(haddr_tb),
-    .hwdata(hwdata_tb),
-    .hready(hready),
-    .hwrite(hwrite),
+    
+    .filter_addr(filter_addr),
+    .filter_addr_valid(filter_addr_valid), 
+    .filter_addr_ready(filter_addr_ready),
+
+    .filter_data(filter_data),
+    .filter_data_valid(filter_data_valid), 
+    .filter_data_ready(filter_data_ready),
+    
     .coeff00(coeff00), 
     .coeff01(coeff01), 
     .coeff02(coeff02), 
@@ -83,24 +88,27 @@ integer i;
 initial
 begin
     rst <= 1;
-    hwrite <= 0;
-    haddr_tb <= 0;
-    hwdata_tb <= 0;
+    filter_addr_valid <= 0;
+    filter_data_valid <= 0;
+    filter_addr <= 0;
+    filter_data <= 0;
     vs_i <= 0;
     #50
     rst <= 0;
-    hwrite <= 0;
-    haddr_tb <= 0;
+    filter_addr_valid <= 0;
+    filter_data_valid <= 0;
+    filter_addr <= 0;
     
     for(i=0;i<25;i=i+1)
     begin
-        haddr_tb <= i;
-        hwrite <= 1;
         #10
-        hwdata_tb <= i+10;
+        filter_addr <= i;
+        filter_addr_valid <= 1;
+        filter_data_valid <= 1;
+        filter_data <= i+10;
     end
     #10
-    hwrite <= 0;
+    filter_addr_valid <= 0;
     
     #50
     vs_i <= 1;

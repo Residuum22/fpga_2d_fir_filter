@@ -57,17 +57,25 @@ module fir_project_top(
    input wire      uart_rtl_0_rxd
 );
 
-wire [31:0] filter_hwdata, filter_haddr;
-wire filter_ready, filter_hwrite;
+wire [31:0] filter_addr;
+wire filter_addr_valid, filter_addr_ready;
+
+wire [31:0] filter_data;
+wire filter_data_valid, filter_data_ready;
 
 fir_microblaze_wrapper microbalze
 (
    .clk100M(clk100M),
    .rstbt(rstbt),
-   .AHB_INTERFACE_0_hwrite(filter_hwrite),
-   .AHB_INTERFACE_0_hwdata(filter_hwdata),
-   .AHB_INTERFACE_0_haddr(filter_haddr),
-   .AHB_INTERFACE_0_hready_in(filter_ready),
+   .M03_AXI_0_awaddr(filter_addr),
+   //.M03_AXI_0_awprot(),
+   .M03_AXI_0_awready(filter_addr_ready),
+   .M03_AXI_0_awvalid(filter_addr_valid),
+    
+   .M03_AXI_0_wdata(filter_data),
+   .M03_AXI_0_wready(filter_data_ready),
+   //.M03_AXI_0_wstrb(),
+   .M03_AXI_0_wvalid(filter_data_valid),
    .uart_rtl_0_rxd(uart_rtl_0_rxd),
    .uart_rtl_0_txd(uart_rtl_0_txd)
 );
@@ -199,10 +207,14 @@ fir_filter fir_filter_0(
     .dv_o(tx_dv),
     .hs_o(tx_hs),
     .vs_o(tx_vs),
-    .haddr(filter_haddr),
-    .hwdata(filter_hwdata),
-    .hready(filter_hready),
-    .hwrite(filter_hwrite)
+    
+    .filter_addr(filter_addr),
+    .filter_addr_valid(filter_addr_valid), 
+    .filter_addr_ready(filter_addr_ready),
+
+    .filter_data(filter_data),
+    .filter_data_valid(filter_data_valid), 
+    .filter_data_ready(filter_data_ready)
 );
 
 hdmi_tx hdmi_tx_0(
