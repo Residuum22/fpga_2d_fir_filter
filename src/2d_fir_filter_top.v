@@ -57,20 +57,17 @@ module fir_project_top(
    input wire      uart_rtl_0_rxd
 );
 
-
-wire [5:0] filter_coeff_addr;
-wire [31:0] filter_coeff_data;
+wire [31:0] filter_hwdata, filter_haddr;
+wire filter_ready, filter_hwrite;
 
 fir_microblaze_wrapper microbalze
 (
    .clk100M(clk100M),
    .rstbt(rstbt),
-   .BRAM_PORTB_0_addr(filter_coeff_addr),
-   .BRAM_PORTB_0_clk(clk100M),
-   .BRAM_PORTB_0_dout(filter_coeff_data),
-   .BRAM_PORTB_0_en(1),
-   .BRAM_PORTB_0_rst(rstbt),
-   .BRAM_PORTB_0_we(0),
+   .AHB_INTERFACE_0_hwrite(filter_hwrite),
+   .AHB_INTERFACE_0_hwdata(filter_hwdata),
+   .AHB_INTERFACE_0_haddr(filter_haddr),
+   .AHB_INTERFACE_0_hready_in(filter_ready),
    .uart_rtl_0_rxd(uart_rtl_0_rxd),
    .uart_rtl_0_txd(uart_rtl_0_txd)
 );
@@ -133,7 +130,6 @@ BUFG BUFG_200M (
 );
 
 
-
 wire rx_clk, rx_clk_5x;
 wire [7:0] rx_red, rx_green, rx_blue;
 wire rx_dv, rx_hs, rx_vs;
@@ -188,6 +184,7 @@ rgb2y rgb2y_0(
 
 wire tx_dv, tx_hs, tx_vs;
 
+
 fir_filter fir_filter_0(
     .clk(rx_clk),
     .rst(rstbt),
@@ -202,10 +199,11 @@ fir_filter fir_filter_0(
     .dv_o(tx_dv),
     .hs_o(tx_hs),
     .vs_o(tx_vs),
-    .filter_coeff_data(filter_coeff_data),
-    .filter_coeff_addr(filter_coeff_addr)
+    .haddr(filter_haddr),
+    .hwdata(filter_hwdata),
+    .hready(filter_hready),
+    .hwrite(filter_hwrite)
 );
- 
 
 hdmi_tx hdmi_tx_0(
    .tx_clk(rx_clk),

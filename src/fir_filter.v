@@ -39,15 +39,11 @@ module fir_filter(
     
     output hs_i_edge,
     
-    input [31:0] filter_coeff_data,
-    output [5:0] filter_coeff_addr
+    wire [31:0] haddr,
+    wire [31:0] hwdata,
+    wire hwrite,
+    wire hready
     );
-
-wire [31:0] filter_bram_data;
-wire [5:0] filter_bram_addr;
-
-assign filter_coeff_data = filter_bram_addr;
-assign filter_bram_data = filter_bram_data;
 
 wire  signed [15:0] coeff00, coeff01, coeff02, coeff03, coeff04;
 wire  signed [15:0] coeff10, coeff11, coeff12, coeff13, coeff14;
@@ -57,8 +53,10 @@ wire  signed [15:0] coeff40, coeff41, coeff42, coeff43, coeff44;
 
 bram2coeff coefficient_storage(
     .clk(clk),
-    .filter_coeff_data(filter_bram_data),
-    .filter_coeff_addr(filter_bram_addr),
+    .haddr(haddr),
+    .hwdata(hwdata),
+    .hready(hready),
+    .hwrite(hwrite),
     .vs_i(vs_i),
     .coeff00(coeff00), 
     .coeff01(coeff01), 
