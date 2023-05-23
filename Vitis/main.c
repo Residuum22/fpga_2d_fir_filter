@@ -65,12 +65,11 @@
 
 static XUartNs550 UartInst;
 u8 RecvBuffer[UART_BUFFER_SIZE];
-//typedef i16 fixed_point_t;
-/**
-inline fixed_point_t float2fixed_point(float number)
+
+short float2fixed_point(float number)
 {
-	return (fixed_point_t)(round(number * (1 << FIXED_POINT_FRACTIONAL_BITS)));
-}*/
+	return (short)(round(number * (1 << FIXED_POINT_FRACTIONAL_BITS)));
+}
 
 
 int main()
@@ -158,8 +157,18 @@ int main()
 			Status = ST_COEFF_RECV;
 			ReceivedCount = 0;
 			array_indexer = 0;
+
 			for(int i = 0; i < 25; i++)
+			{
+				if(dataValid == 1)
+				{
+					u32 data;
+					short orig_data = float2fixed_point(coeff_array[i]);
+					memcpy(data, orig_data, 2);
+					Xil_Out32(XPAR_M03_AXI_0_BASEADDR + i, data);
+				}
 				coeff_array[i] = 0;
+			}
 
 		}
 	}
