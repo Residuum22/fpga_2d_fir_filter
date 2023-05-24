@@ -21,6 +21,7 @@
 // (* mark_debug="true" *) 
 module fir_filter(
     input           clk,
+    input           microblaze_clk,
     input           rst,
     input [7:0]     y_i,
     input           dv_i,
@@ -56,6 +57,7 @@ wire  signed [15:0] coeff40, coeff41, coeff42, coeff43, coeff44;
 
 bram2coeff coefficient_storage(
     .clk(clk),
+    .microblaze_clk(microblaze_clk),
     
     .filter_addr(filter_addr),
     .filter_addr_valid(filter_addr_valid), 

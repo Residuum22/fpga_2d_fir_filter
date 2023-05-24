@@ -22,6 +22,7 @@
 
 module bram2coeff(
     input clk,
+    input microblaze_clk,
     input rst,
     input vs_i,
     
@@ -60,14 +61,15 @@ wire [15:0] filter_coeff_data;
 //    filter_addr_dly <= filter_addr;
 //end
 
-dp_bram
+true_dp_bram
     #(
         .DEPTH(25),
         .WIDTH(16)
     )
-    dp_bram
+    true_dp_bram
     (
-        .clk(clk),
+        .clk_a(microblaze_clk),
+        .clk_b(clk),
     
         .we_a(filter_data_valid),
     
@@ -79,7 +81,7 @@ dp_bram
     );
 
 
-reg signed [15:0] coeff [24:0];
+(* mark_debug = "true" *) reg signed [15:0] coeff [24:0];
 integer i;
 initial
 begin
