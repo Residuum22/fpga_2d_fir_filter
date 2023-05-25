@@ -1,27 +1,10 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 01.05.2023 18:36:50
-// Design Name: 
-// Module Name: fir_filter
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
+
 // (* mark_debug="true" *) 
 module fir_filter(
-    input           clk,
-    input           microblaze_clk,
+    input           clk, // RX_CLK from the HDMI pheripheral
+    input           microblaze_clk, // CLK which is the equivalent with the 
+    
     input           rst,
     input [7:0]     y_i,
     input           dv_i,
@@ -37,12 +20,12 @@ module fir_filter(
     
     output hs_i_edge,
     
-    //AXI4-Lite ?r?si c?m csatorna.
+    //AXI4-Lite write address channel from the microbalze
     input  wire [31:0]           filter_axi_awaddr,
     input  wire                 filter_axi_awvalid,
     output wire                 filter_axi_awready,
     
-    //AXI4-Lite ?r?si adat csatorna.
+    //AXI4-Lite write data channel form the microblaze
     input  wire [31:0]          filter_axi_wdata,
     input  wire [3:0]           filter_axi_wstrb,
     input  wire                 filter_axi_wvalid,
