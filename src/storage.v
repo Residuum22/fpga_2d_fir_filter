@@ -1,35 +1,16 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 13.05.2023 09:29:21
-// Design Name: 
-// Module Name: storage
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-// (* mark_debug="true" *) 
+
 module storage(
-    input       clk,
-    input       rst,
-    input [7:0] y_i,
-    input       dv_i,
-    input       hs_i,
-    input       vs_i,
+    input           clk,
+    input           rst,
+    input [7:0]     y_i,
+    input           dv_i,
+    input           hs_i,
+    input           vs_i,
     
-    output           dv_o,
-    output           hs_o,
-    output           vs_o,
+    output          dv_o,
+    output          hs_o,
+    output          vs_o,
     
     output reg [10:0] x_index,
     output reg [10:0] y_index,
@@ -39,18 +20,32 @@ module storage(
     output [7:0] p0, p1, p2, p3, p4
     );
 
-reg [7:0] y_o;
-reg     [14:0]  bram_addr_wr;
-reg     [10:0]  bram_addr_rd;
-wire    [7:0]   bram_data_rd[3:0];
-reg    [7:0]   bram_data_wr; 
 
+// BRAM write address is the same for the all BRAM 
+// 11 bit is needed for addressing cols in the BRAM
+// only one bram will be writen in the same time because the pixels are comming serial
+// the upper 4 bit is needed to select the good bram.             
+reg [14:0]  bram_addr_wr;
+
+// BRAM read address is the same at the all BRAMs because the same colomn is needed to 
+// read from all BRAMs
+reg [10:0]  bram_addr_rd;
+
+// Data will be written into the BRAM. This data is the y_o of the grayscaler output
+reg [7:0]   bram_data_wr;
+
+// BRAMs output is a 4 element array with the pixel width.
+wire [7:0]  bram_data_rd[3:0];
+ 
+
+// This block generate 4 BRAM for rows FIFO
 genvar bram_i;
 generate 
     for(bram_i=0;bram_i<4;bram_i=bram_i+1)
     begin
     dp_bram
     #(
+        // BRAM depth need to be 1800 according to VESA for 1600x900 resolution
         .DEPTH(2000)
     )
     dp_bram
@@ -68,7 +63,9 @@ generate
     end
 endgenerate
 
-// Edge detection logic for the hs_i signal
+// Edge detection logic for the hs_i and vs_i signal
+// hs_i_edge signal is resetting the colomn index and increment row counter index.
+// vs_i_edge signal is resetting the row index
 wire vs_i_edge;
 wire hs_i_edge;
 reg hs_i_dly, vs_i_dly;
@@ -82,50 +79,51 @@ assign hs_i_edge = hs_i & ~hs_i_dly;
 assign vs_i_edge = vs_i & ~vs_i_dly;
 
 // Mux for select signal from the y_i or 0 for padding.
+// If data is valid then the incommin pixel wil be written into the bram
+// if data is NOT valid then 0 valued pixel will be written into the bram == zero padding. 
 always @(posedge clk)
 begin
     case (dv_i)
-    1'b0: pix_mux <= 0;
-    2'b1: pix_mux <= y_i;
+        1'b0: pix_mux <= 0;
+        2'b1: pix_mux <= y_i;
     endcase
 end
 
-// Row shift register in the kernel
+// This logic is the main part of the block storage
 integer i;
-reg [7:0] row_buffer[3:0];
-
 always @(posedge clk)
 begin
     if (rst)
     begin
-        x_index <= 0;
-        y_index <= 0;
-        bram_addr_wr[10:0] <= 0;
-        bram_addr_rd <= 0;
+        x_index <= 0; // Reset x index
+        y_index <= 0; // Reset y index
+        bram_addr_wr[10:0] <= 0; // Disable the write of all bram
+        bram_addr_rd <= 0; // Set the read address to 0
     end
     else
     begin
-        bram_addr_wr[14:11] <= 4'b0001 << (y_index % 4);
-        bram_addr_wr[10:0] <= x_index;
-        bram_addr_rd <= x_index;
-        bram_data_wr <= pix_mux;
+        bram_addr_wr[14:11] <= 4'b0001 << (y_index % 4); // Select the right bram where the incomming pixel will be written.
+        bram_addr_wr[10:0] <= x_index; // Write Address is the colomn of the image with padding.
+        bram_addr_rd <= x_index; // Read Address is the colom of the image with padding (Memory is read first mode) 
+        bram_data_wr <= pix_mux; // The data is paddig or valid pixel.
         
         if (hs_i_edge)
         begin
-            y_index <= y_index + 1;
-            x_index <= 0;
+            y_index <= y_index + 1; // Increment the row index
+            x_index <= 0; // Reset the col index.
         end
         else
         begin
-            x_index <= x_index + 1;
+            x_index <= x_index + 1; // In every clock cycle a new pixel is comming or padding is needed.
         end
         if (vs_i_edge)
         begin
-            y_index <= 0;
+            y_index <= 0; // If vertical sync signal is arrived then reset the y_index.
         end
     end
 end
 
+// Delay the incomming signal with 2 clock cycle.
 reg [7:0] pix_mux_2clk[1:0];
 always @(posedge clk)
 begin
