@@ -57,25 +57,36 @@ module fir_project_top(
    input wire      uart_rtl_0_rxd
 );
 
-wire [31:0] filter_addr;
-wire filter_addr_valid, filter_addr_ready;
+wire [31:0] filter_axi_awaddr;
+wire filter_axi_awvalid, filter_axi_awready;
 
-wire [31:0] filter_data;
-wire filter_data_valid, filter_data_ready;
+wire [31:0] filter_axi_wdata;
+wire filter_axi_wvalid, filter_axi_wready;
+wire [3:0] filter_axi_wstrb; 
+
+wire filter_axi_bready, filter_axi_bvalid;
+wire [1:0] filter_axi_bresp;
+
 
 fir_microblaze_wrapper microbalze
 (
    .clk100M(clk100M),
    .rstbt(rstbt),
-   .M03_AXI_0_awaddr(filter_addr),
+   
+   .M03_AXI_0_awaddr(filter_axi_awaddr),
    //.M03_AXI_0_awprot(),
-   .M03_AXI_0_awready(filter_addr_ready),
-   .M03_AXI_0_awvalid(filter_addr_valid),
+   .M03_AXI_0_awready(filter_axi_awready),
+   .M03_AXI_0_awvalid(filter_axi_awvalid),
     
-   .M03_AXI_0_wdata(filter_data),
-   .M03_AXI_0_wready(filter_data_ready),
-   //.M03_AXI_0_wstrb(),
-   .M03_AXI_0_wvalid(filter_data_valid),
+   .M03_AXI_0_wdata(filter_axi_wdata),
+   .M03_AXI_0_wready(filter_axi_wready),
+   .M03_AXI_0_wstrb(filter_axi_wstrb),
+   .M03_AXI_0_wvalid(filter_axi_wvalid),
+   
+   .M03_AXI_0_bready(filter_axi_bready),
+   .M03_AXI_0_bresp(filter_axi_bresp),
+   .M03_AXI_0_bvalid(filter_axi_bvalid),
+    
    .uart_rtl_0_rxd(uart_rtl_0_rxd),
    .uart_rtl_0_txd(uart_rtl_0_txd)
 );
@@ -209,13 +220,18 @@ fir_filter fir_filter_0(
     .hs_o(tx_hs),
     .vs_o(tx_vs),
     
-    .filter_addr(filter_addr),
-    .filter_addr_valid(filter_addr_valid), 
-    .filter_addr_ready(filter_addr_ready),
+    .filter_axi_awaddr(filter_axi_awaddr),
+    .filter_axi_awvalid(filter_axi_awvalid), 
+    .filter_axi_awready(filter_axi_awready),
 
-    .filter_data(filter_data),
-    .filter_data_valid(filter_data_valid), 
-    .filter_data_ready(filter_data_ready)
+    .filter_axi_wdata(filter_axi_wdata),
+    .filter_axi_wvalid(filter_axi_wvalid),
+    .filter_axi_wready(filter_axi_wready),
+    .filter_axi_wstrb(filter_axi_wstrb),
+
+    .filter_axi_bready(filter_axi_bready), 
+    .filter_axi_bvalid(filter_axi_bvalid),
+    .filter_axi_bresp(filter_axi_bresp)
 );
 
 hdmi_tx hdmi_tx_0(

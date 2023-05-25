@@ -20,19 +20,25 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module bram2coeff(
+module axi2coeff(
     input clk,
     input microblaze_clk,
     input rst,
-    input vs_i,
     
-    input [31:0] filter_addr,
-    input filter_addr_valid, 
-    output filter_addr_ready,
-
-    input [31:0] filter_data,
-    input filter_data_valid, 
-    output filter_data_ready,
+    input  wire [31:0]           s_axi_awaddr,
+    input  wire                 s_axi_awvalid,
+    output wire                 s_axi_awready,
+    
+    //AXI4-Lite ?r?si adat csatorna.
+    input  wire [31:0]          s_axi_wdata,
+    input  wire [3:0]           s_axi_wstrb,
+    input  wire                 s_axi_wvalid,
+    output wire                 s_axi_wready,
+    
+    //AXI4-Lite ?r?si v?lasz csatorna.
+    output wire [1:0]           s_axi_bresp,
+    output wire                 s_axi_bvalid,
+    input  wire                 s_axi_bready,
     
     output signed [15:0] coeff00, coeff01, coeff02, coeff03, coeff04,
     output signed [15:0] coeff10, coeff11, coeff12, coeff13, coeff14,
@@ -41,107 +47,77 @@ module bram2coeff(
     output signed [15:0] coeff40, coeff41, coeff42, coeff43, coeff44
     );
 
-reg vs_i_dly;
-wire vs_i_edge;
+//Regiszter ?r?si interf?sz.
+wire  [7:0]           wr_addr;        //?r?si c?m
+wire                  wr_en;          //?r?s enged?lyez? jel
+wire  [31:0]          wr_data;        //?r?si adat
+wire  [3:0]           wr_strb;        //B?jt enged?lyez? jelek
 
-always @(posedge clk)
-begin
-    vs_i_dly <= vs_i;
-end
-
-assign vs_i_edge = vs_i & ~vs_i_dly;
-
-reg [5:0] addr;
-reg en = 0;
-wire [15:0] filter_coeff_data;
-
-//reg [31:0] filter_addr_dly;
-//always @(posedge clk)
-//begin
-//    filter_addr_dly <= filter_addr;
-//end
-
-true_dp_bram
-    #(
-        .DEPTH(25),
-        .WIDTH(16)
-    )
-    true_dp_bram
-    (
-        .clk_a(microblaze_clk),
-        .clk_b(clk),
+axi4_lite_if
+#(
+    .ADDR_BITS(8)
+)
+axi4_lite_if
+(
+    .clk(microblaze_clk),            //Rendszer?rajel
+    .rst(rst),            //Akt?v magas szinkron reset
+    //AXI4-Lite ?r?si c?m csatorna.
+    .s_axi_awaddr(s_axi_awaddr[7:0]),
+    .s_axi_awvalid(s_axi_awvalid),
+    .s_axi_awready(s_axi_awready),
     
-        .we_a(filter_data_valid),
+    //AXI4-Lite ?r?si adat csatorna.
+    .s_axi_wdata(s_axi_wdata),
+    .s_axi_wstrb(s_axi_wstrb),
+    .s_axi_wvalid(s_axi_wvalid),
+    .s_axi_wready(s_axi_wready),
     
-        .addr_a(filter_addr[10:0]),
-        .addr_b({5'b00000, addr}),
-        
-        .din_a(filter_data[15:0]),
-        .dout_b(filter_coeff_data)
-    );
-
-
-(* mark_debug = "true" *) reg signed [15:0] coeff [24:0];
-integer i;
-initial
-begin
-    for(i=0;i<25;i=i+1)
-        coeff[i] <= 0;
-end
-
-
-always @(posedge clk)
-begin
-    if (vs_i_edge)
-    begin
-        addr <= 0;
-        en <= 1;
-    end
+    //AXI4-Lite ?r?si v?lasz csatorna.
+    .s_axi_bresp(s_axi_bresp),
+    .s_axi_bvalid(s_axi_bvalid),
+    .s_axi_bready(s_axi_bready),
     
-    if (en)
-    begin
-        coeff[addr-1] <= filter_coeff_data[15:0];
-        addr <= addr + 1;
-    end
+    //Regiszter ?r?si interf?sz.
+    .wr_addr(wr_addr),        //?r?si c?m
+    .wr_en(wr_en),          //?r?s enged?lyez? jel
+    .wr_data(wr_data),        //?r?si adat
+    .wr_strb(wr_strb)        //B?jt enged?lyez? jelek
+);
+
+axi_data2coeff axi_data2coeff(
+    .microblaze_clk(microblaze_clk),
+    .rst(rst),
     
-    if (addr == 25)
-    begin
-        en <= 0;
-        addr <= 0; 
-    end   
-end
-
-assign filter_addr_ready = 1'b1;
-assign filter_data_ready = 1'b1;
-
-assign coeff00 = coeff[0];
-assign coeff01 = coeff[1];
-assign coeff02 = coeff[2];
-assign coeff03 = coeff[3];
-assign coeff04 = coeff[4];
-
-assign coeff10 = coeff[5];
-assign coeff11 = coeff[6];
-assign coeff12 = coeff[7];
-assign coeff13 = coeff[8];
-assign coeff14 = coeff[9];
-
-assign coeff20 = coeff[10];
-assign coeff21 = coeff[11];
-assign coeff22 = coeff[12];
-assign coeff23 = coeff[13];
-assign coeff24 = coeff[14];
-
-assign coeff30 = coeff[15];
-assign coeff31 = coeff[16];
-assign coeff32 = coeff[17];
-assign coeff33 = coeff[18];
-assign coeff34 = coeff[19];
-
-assign coeff40 = coeff[20];
-assign coeff41 = coeff[21];
-assign coeff42 = coeff[22];
-assign coeff43 = coeff[23];
-assign coeff44 = coeff[24];
+    .wr_addr(wr_addr),        //?r?si c?m
+    .wr_en(wr_en),          //?r?s enged?lyez? jel
+    .wr_data(wr_data),        //?r?si adat
+    .wr_strb(wr_strb),       //B?jt enged?lyez? jelek
+    
+    .coeff00(coeff00), 
+    .coeff01(coeff01), 
+    .coeff02(coeff02), 
+    .coeff03(coeff03), 
+    .coeff04(coeff04),
+    .coeff10(coeff10), 
+    .coeff11(coeff11),
+    .coeff12(coeff12),
+    .coeff13(coeff13),
+    .coeff14(coeff14),
+    .coeff20(coeff20),
+    .coeff21(coeff21),
+    .coeff22(coeff22),
+    .coeff23(coeff23), 
+    .coeff24(coeff24),
+    .coeff30(coeff30), 
+    .coeff31(coeff31), 
+    .coeff32(coeff32), 
+    .coeff33(coeff33), 
+    .coeff34(coeff34),
+    .coeff40(coeff40),
+    .coeff41(coeff41),
+    .coeff42(coeff42),
+    .coeff43(coeff43),
+    .coeff44(coeff44)
+);
 
 endmodule

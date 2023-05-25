@@ -31,25 +31,19 @@ wire  signed [15:0] coeff20, coeff21, coeff22, coeff23, coeff24;
 wire  signed [15:0] coeff30, coeff31, coeff32, coeff33, coeff34;
 wire  signed [15:0] coeff40, coeff41, coeff42, coeff43, coeff44;
 
-reg [7:0] coeff [24:0];
-reg vs_i;
+reg [7:0] wr_addr;
+reg wr_en;
+reg [31:0] wr_data;
+reg [3:0] wr_strb;
 
-reg [31:0] filter_data, filter_addr;
-reg filter_addr_valid, filter_data_valid;
-wire filter_addr_ready, filter_data_ready;
-
-bram2coeff uut(
-    .clk(clk),
+axi_data2coeff uut(
+    .microblaze_clk(clk),
     .rst(rst),
-    .vs_i(vs_i),
-    
-    .filter_addr(filter_addr),
-    .filter_addr_valid(filter_addr_valid), 
-    .filter_addr_ready(filter_addr_ready),
-
-    .filter_data(filter_data),
-    .filter_data_valid(filter_data_valid), 
-    .filter_data_ready(filter_data_ready),
+   
+    .wr_addr(wr_addr),        //?r?si c?m
+    .wr_en(wr_en),          //?r?s enged?lyez? jel
+    .wr_data(wr_data),        //?r?si adat
+    .wr_strb(wr_strb),
     
     .coeff00(coeff00), 
     .coeff01(coeff01), 
@@ -85,37 +79,32 @@ begin
 end
 
 integer i;
+
+reg [4:0] cntr;
+
 initial
 begin
     rst <= 1;
-    filter_addr_valid <= 0;
-    filter_data_valid <= 0;
-    filter_addr <= 0;
-    filter_data <= 0;
-    vs_i <= 0;
+    wr_addr <= 0;
+    
+    wr_en <= 0;
+    wr_data <= 0;
+    wr_strb <= 4'b1111;
+    
+    cntr <= 0;
+
     #50
     rst <= 0;
-    filter_addr_valid <= 0;
-    filter_data_valid <= 0;
-    filter_addr <= 0;
     
     for(i=0;i<25;i=i+1)
     begin
         #10
-        filter_addr <= i;
-        filter_addr_valid <= 1;
-        filter_data_valid <= 1;
-        filter_data <= i+10;
+        wr_addr <= (i * 4);
+        wr_data <= i+10;
+        wr_en <= 1;
     end
     #10
-    filter_addr_valid <= 0;
-    
-    #50
-    vs_i <= 1;
-    
-    #20
-    vs_i <= 0;
-
+    wr_en <= 0;
 end
 
 

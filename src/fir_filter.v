@@ -35,18 +35,23 @@ module fir_filter(
     output          hs_o,
     output          vs_o,
     
-    output reg [10:0] x_index,
-    output reg [9:0] y_index,
-    
     output hs_i_edge,
     
-    input [31:0] filter_addr,
-    input filter_addr_valid, 
-    output filter_addr_ready,
-
-    input [31:0] filter_data,
-    input filter_data_valid, 
-    output filter_data_ready
+    //AXI4-Lite ?r?si c?m csatorna.
+    input  wire [31:0]           filter_axi_awaddr,
+    input  wire                 filter_axi_awvalid,
+    output wire                 filter_axi_awready,
+    
+    //AXI4-Lite ?r?si adat csatorna.
+    input  wire [31:0]          filter_axi_wdata,
+    input  wire [3:0]           filter_axi_wstrb,
+    input  wire                 filter_axi_wvalid,
+    output wire                 filter_axi_wready,
+    
+    //AXI4-Lite ?r?si v?lasz csatorna.
+    output wire [1:0]           filter_axi_bresp,
+    output wire                 filter_axi_bvalid,
+    input  wire                 filter_axi_bready
     );
 
 wire  signed [15:0] coeff00, coeff01, coeff02, coeff03, coeff04;
@@ -55,19 +60,26 @@ wire  signed [15:0] coeff20, coeff21, coeff22, coeff23, coeff24;
 wire  signed [15:0] coeff30, coeff31, coeff32, coeff33, coeff34;
 wire  signed [15:0] coeff40, coeff41, coeff42, coeff43, coeff44;
 
-bram2coeff coefficient_storage(
+axi2coeff axi2coeff(
     .clk(clk),
     .microblaze_clk(microblaze_clk),
     
-    .filter_addr(filter_addr),
-    .filter_addr_valid(filter_addr_valid), 
-    .filter_addr_ready(filter_addr_ready),
-
-    .filter_data(filter_data),
-    .filter_data_valid(filter_data_valid), 
-    .filter_data_ready(filter_data_ready),
+    //AXI4-Lite ?r?si c?m csatorna.
+    .s_axi_awaddr(filter_axi_awaddr[7:0]),
+    .s_axi_awvalid(filter_axi_awvalid),
+    .s_axi_awready(filter_axi_awready),
     
-    .vs_i(vs_i),
+    //AXI4-Lite ?r?si adat csatorna.
+    .s_axi_wdata(filter_axi_wdata),
+    .s_axi_wstrb(filter_axi_wstrb),
+    .s_axi_wvalid(filter_axi_wvalid),
+    .s_axi_wready(filter_axi_wready),
+    
+    //AXI4-Lite ?r?si v?lasz csatorna.
+    .s_axi_bresp(filter_axi_bresp),
+    .s_axi_bvalid(filter_axi_bvalid),
+    .s_axi_bready(filter_axi_bready),
+    
     .coeff00(coeff00), 
     .coeff01(coeff01), 
     .coeff02(coeff02), 
