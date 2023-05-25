@@ -162,10 +162,11 @@ int main()
 			{
 				if(dataValid == 1)
 				{
-					u32 data;
+					u16 data;
 					short orig_data = float2fixed_point(coeff_array[i]);
-					memcpy(data, orig_data, 2);
-					Xil_Out32(XPAR_M03_AXI_0_BASEADDR + i, data);
+					data = orig_data;
+					//memcpy(data, orig_data, 2);
+					Xil_Out32(XPAR_M03_AXI_0_BASEADDR + i*4, data);
 				}
 				coeff_array[i] = 0;
 			}
