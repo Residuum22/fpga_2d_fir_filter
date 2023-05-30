@@ -47,6 +47,14 @@ wire [3:0] filter_axi_wstrb;
 wire filter_axi_bready, filter_axi_bvalid;
 wire [1:0] filter_axi_bresp;
 
+
+wire histogram_axi_arready, histogram_axi_arvalid;
+wire [31:0] histogram_axi_araddr;
+
+wire [31:0] histogram_axi_rdata;
+wire histogram_axi_rvalid, histogram_axi_rready;
+wire [1:0] histogram_axi_rresp;
+
 // Microbalze block design wrapper to give
 // clk reset signal to the microbalze
 // wire out the axi lite bus with uart.
@@ -70,6 +78,15 @@ fir_microblaze_wrapper microbalze
    .M03_AXI_0_bready(filter_axi_bready),
    .M03_AXI_0_bresp(filter_axi_bresp),
    .M03_AXI_0_bvalid(filter_axi_bvalid),
+   
+   .M04_AXI_0_araddr(histogram_axi_araddr),
+   .M04_AXI_0_arready(histogram_axi_arready),
+   .M04_AXI_0_arvalid(histogram_axi_arvalid),
+    
+   .M04_AXI_0_rdata(histogram_axi_rdata),
+   .M04_AXI_0_rready(histogram_axi_rready),
+   .M04_AXI_0_rresp(histogram_axi_rresp),
+   .M04_AXI_0_rvalid(histogram_axi_rvalid),
     
     // Uart output.
    .uart_rtl_0_rxd(uart_rtl_0_rxd),
@@ -189,6 +206,23 @@ rgb2y rgb2y_0(
     .y_o  (y)
 );
 
+histogram2axi histogram_top(
+    .rx_clk(rx_clk),
+    .microblaze_clk(clk100),
+    
+    .y_i(y),
+    .dv_i(y_dv),
+    
+    
+    .s_axi_araddr(histogram_axi_araddr[7:0]),
+    .s_axi_arvalid(histogram_axi_arvalid),
+    .s_axi_arready(histogram_axi_arready),
+    
+    .s_axi_rdata(histogram_axi_rdata),
+    .s_axi_rresp(histogram_axi_rresp),
+    .s_axi_rvalid(histogram_axi_rvalid),
+    .s_axi_rready(histogram_axi_rready)
+);
 
 // Central module the fir filter. 
 // This module has submodules 
