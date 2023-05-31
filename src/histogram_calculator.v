@@ -23,7 +23,8 @@ module histogram_calculator(
     else if(valid == 1 & end_of_frame == 1)
         valid_frame <= 0;
         
-assign valid = (valid_frame == 1 & in_valid == 1 | end_of_frame == 1) ? 1 : 0;
+    // validity based on the external validity and the pixel validity
+    assign valid = (valid_frame == 1 & in_valid == 1 | end_of_frame == 1) ? 1 : 0;
     
     
     wire [15:0] internal_data_rd;
@@ -34,6 +35,7 @@ assign valid = (valid_frame == 1 & in_valid == 1 | end_of_frame == 1) ? 1 : 0;
     
     reg  [2:0]  internal_ena_wr = 0;
     
+    // Internal ram for storing the currently used histogram data
     dp_bram 
     #(
         .DEPTH(256),
@@ -54,6 +56,7 @@ assign valid = (valid_frame == 1 & in_valid == 1 | end_of_frame == 1) ? 1 : 0;
     reg [15:0]  external_addr_wr = 0;
     reg [1:0]   external_ena_wr = 0;
     
+    // external ram for the microblaze to access
     true_dp_bram 
     #(
         .DEPTH(256),
@@ -75,6 +78,7 @@ assign valid = (valid_frame == 1 & in_valid == 1 | end_of_frame == 1) ? 1 : 0;
     reg [7:0] counter = 0;
     reg       frame_reset = 0;
 
+// Internal data write needs to be set to a valid value when computing and to 0 when clearing phase
 assign internal_data_wr = frame_reset == 0 ? internal_data_rd + 1 : 0;
 
 reg       frame_copy = 0;
@@ -83,46 +87,44 @@ reg       post_count = 0;
 reg [3:0] pre_counter = 0;
 reg [2:0] post_counter = 0;
 
-// histogram counter
+// histogram internal ram handler
 always@(posedge clk)
-if(frame_reset == 0)
+if(frame_reset == 0)        // calculation phase
 begin
     internal_addr_rd <= {3'b0, in_pixel};
     internal_addr_wr <= internal_addr_rd;
     internal_ena_wr  <= {internal_ena_wr[1:0], valid};
 end
-else if(counter == 255 /*| pre_counter == 2*/)
-    internal_ena_wr <= 1'b0;
-else if(frame_copy == 1)
+else if(frame_copy == 1)    // copying and reseting the internal ram fields
 begin
     internal_addr_rd <= {3'b0, counter};
     internal_addr_wr <= internal_addr_rd;
     internal_ena_wr <= {internal_ena_wr[1:0], 1'b1};
 end
-else if(post_count == 1)
+else if(post_count == 1)    // needs for finishing the reseting of the internal ram
 begin
     internal_ena_wr <= {internal_ena_wr[1:0], 1'b0};
     internal_addr_wr <= internal_addr_rd;
 end
     
 reg internal_end_of_frame = 0;
-
+// delaying end of frame singal by one for the correct timing of the copying
 always@(posedge clk)
 if(valid == 1)
     internal_end_of_frame <= end_of_frame;
 else
     internal_end_of_frame <= 0;
     
-// counter used for addressing the external ram ================================
+// === counters ===================================================
+// counters used in the copying and reseting
 always@(posedge clk)
 if(frame_copy == 1)
     pre_counter <= 0;
 else if(internal_end_of_frame == 1 | pre_counter != 0)
     pre_counter <= pre_counter + 1; 
     
-// counter used for addressing the external ram
 always@(posedge clk)
-if(counter == 5)
+if(counter == 255)
     counter <= 0;
 else if(frame_copy == 1)
     counter <= counter + 1;
@@ -132,17 +134,18 @@ if(post_counter == 2)
     post_counter <= 0;
 else if(post_count == 1)
     post_counter <= post_counter + 1;
-    
-// reset flag set if frame ended ==========================================================
+  
+// === status flags ===============================================  
+// reset flag set if frame ended 
 always@(posedge clk)
 if(post_counter == 2)
     frame_reset <= 0;
 else if(pre_counter == 2)
     frame_reset <= 1;
     
-// set reset flag to 0 after a full cycle
+// set flag for copying phase
 always@(posedge clk)
-if(counter == 5)
+if(counter == 255)
     frame_copy <= 0;
 else if(pre_counter == 2)
     frame_copy <= 1;
@@ -154,7 +157,8 @@ if(post_counter == 2)
 else if(counter == 5)
     post_count <= 1;
 
-// moving data to output ram ====================================================
+// === external ram handling =======================================
+// external ram enabling
 always@(posedge clk)
 if(frame_copy == 1)
     external_ena_wr <= {external_ena_wr[0], 1'b1};
@@ -165,6 +169,7 @@ else
 always@(posedge clk)
     external_addr_wr <= internal_addr_rd; 
     
+// valid flasg set to signal cpu
 assign out_valid = post_counter == 1;
     
 endmodule
