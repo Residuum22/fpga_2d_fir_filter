@@ -212,7 +212,8 @@ histogram2axi histogram_top(
     
     .y_i(y),
     .dv_i(y_dv),
-    
+    .cpu_trigger(),
+    .cpu_signal_done(),
     
     .s_axi_araddr(histogram_axi_araddr[7:0]),
     .s_axi_arvalid(histogram_axi_arvalid),

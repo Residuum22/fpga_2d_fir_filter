@@ -8,6 +8,9 @@ module histogram2axi(
     input [7:0] y_i,
     input dv_i,
     input vs_i,
+    input cpu_trigger,
+    
+    output cpu_signal_done,
     
     input  wire [7:0]           s_axi_araddr,
     input  wire                 s_axi_arvalid,
@@ -56,12 +59,12 @@ histogram_calculator hisitogram_calc(
     
     .in_pixel(y_i),
     .in_valid(dv_i),
-    
+    .calc_flag(cpu_trigger),
     //.base_address(),
     .end_of_frame(vs_i),
     
     .external_addr_rd(rd_addr),
     .external_data_rd(rd_data),
-    .out_valid()
+    .out_valid(cpu_signal_done)
 );
 endmodule
