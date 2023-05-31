@@ -1,27 +1,7 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 05/25/2023 03:16:38 PM
-// Design Name: 
-// Module Name: histogram_calculator
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
-
 module histogram_calculator(
     input       clk,
+    input       microblaze_clk,
     input       rst,
     input [7:0] in_pixel,
     input       calc_flag,
@@ -54,7 +34,6 @@ assign valid = (valid_frame == 1 & in_valid == 1 | end_of_frame == 1) ? 1 : 0;
     
     reg  [2:0]  internal_ena_wr = 0;
     
-    
     dp_bram 
     #(
         .DEPTH(256),
@@ -75,13 +54,14 @@ assign valid = (valid_frame == 1 & in_valid == 1 | end_of_frame == 1) ? 1 : 0;
     reg [15:0]  external_addr_wr = 0;
     reg [1:0]   external_ena_wr = 0;
     
-    dp_bram 
+    true_dp_bram 
     #(
         .DEPTH(256),
         .WIDTH(16)
     ) external_ram
     (
-        .clk(clk),
+        .clk_a(clk),
+        .clk_b(microblaze_clk),
     
         .we_a(external_ena_wr[1]),
     

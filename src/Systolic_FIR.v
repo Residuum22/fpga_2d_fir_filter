@@ -1,23 +1,5 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 05/17/2023 08:02:47 PM
-// Design Name: 
-// Module Name: Systolic_FIR
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
+
 module fir_dsp
 #(parameter INPUT_DELAY = 1)
 (
@@ -56,6 +38,7 @@ always@(posedge clk)
 always@(posedge clk)
     p_outbuff <= mul + c;
     
+// setting output
 assign a_out = a_inbuff[INPUT_DELAY];
 assign p = p_outbuff;
     
@@ -169,6 +152,7 @@ module cascade_systolic_fir
     output out_valid
 );
 
+// packing into array for systolic filter generation
 wire [15:0] coeff [24:0];
 
 assign coeff[0] = coeff00;
@@ -197,6 +181,7 @@ assign coeff[22] = coeff42;
 assign coeff[23] = coeff43;
 assign coeff[24] = coeff44;
 
+// packing into array for systolic filter generation
 wire [7:0] pixels [4:0];
 assign pixels[0] = pixel0;
 assign pixels[1] = pixel1;
@@ -210,6 +195,7 @@ wire signed [35:0] sub_res [4:0];
 
 genvar i;
 
+// Systolic filter array
 generate
     for(i = 0; i < 5; i = i + 1)
     begin
@@ -232,18 +218,21 @@ endgenerate
 
 reg signed [35:0] sum;
 
+// summing systolic lines 
 always@(posedge clk)
     sum <= sub_res[0] + sub_res[1] + sub_res[2] + sub_res[3] + sub_res[4];
     
-reg counter = 0;
+reg temp_out_valid = 0;
 
+// outvalid moved into a temporary buffer to be able to reset
 always@(posedge clk)
 if(rst)
-    counter <= 0;
+    temp_out_valid <= 0;
 else
-    counter <= out_valids[0];
+    temp_out_valid <= out_valids[0];
     
-assign out_valid = counter;
+// setting outputs
+assign out_valid = temp_out_valid;
 assign out_pixel = sum[35] == 1 ? 8'h00 : (sum > 39'h0000FF0000 ? 8'hFF : sum[24:16]);
 
 

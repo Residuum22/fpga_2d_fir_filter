@@ -1,24 +1,4 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 04/03/2019 04:56:58 PM
-// Design Name: 
-// Module Name: hdmi_top
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
 
 module fir_project_top(
    input  wire       clk100M,
@@ -68,25 +48,47 @@ wire filter_axi_bready, filter_axi_bvalid;
 wire [1:0] filter_axi_bresp;
 
 
+wire histogram_axi_arready, histogram_axi_arvalid;
+wire [31:0] histogram_axi_araddr;
+
+wire [31:0] histogram_axi_rdata;
+wire histogram_axi_rvalid, histogram_axi_rready;
+wire [1:0] histogram_axi_rresp;
+
+// Microbalze block design wrapper to give
+// clk reset signal to the microbalze
+// wire out the axi lite bus with uart.
 fir_microblaze_wrapper microbalze
 (
    .clk100M(clk100M),
    .rstbt(rstbt),
    
+   // Axi address write channel
    .M03_AXI_0_awaddr(filter_axi_awaddr),
-   //.M03_AXI_0_awprot(),
    .M03_AXI_0_awready(filter_axi_awready),
    .M03_AXI_0_awvalid(filter_axi_awvalid),
     
+    // Axi data write channel
    .M03_AXI_0_wdata(filter_axi_wdata),
    .M03_AXI_0_wready(filter_axi_wready),
    .M03_AXI_0_wstrb(filter_axi_wstrb),
    .M03_AXI_0_wvalid(filter_axi_wvalid),
    
+   // Axi response channel
    .M03_AXI_0_bready(filter_axi_bready),
    .M03_AXI_0_bresp(filter_axi_bresp),
    .M03_AXI_0_bvalid(filter_axi_bvalid),
+   
+   .M04_AXI_0_araddr(histogram_axi_araddr),
+   .M04_AXI_0_arready(histogram_axi_arready),
+   .M04_AXI_0_arvalid(histogram_axi_arvalid),
     
+   .M04_AXI_0_rdata(histogram_axi_rdata),
+   .M04_AXI_0_rready(histogram_axi_rready),
+   .M04_AXI_0_rresp(histogram_axi_rresp),
+   .M04_AXI_0_rvalid(histogram_axi_rvalid),
+    
+    // Uart output.
    .uart_rtl_0_rxd(uart_rtl_0_rxd),
    .uart_rtl_0_txd(uart_rtl_0_txd)
 );
@@ -179,9 +181,12 @@ hdmi_rx hdmi_rx_0(
    .rx_status(rx_status)
 );
 
+// Gray scaling the image from the color componenet
+// Algorithm is written in the module.
 wire [7:0] y;
 wire [7:0] tx_red, tx_green, tx_blue;
 wire y_dv, y_hs, y_vs;
+
 rgb2y rgb2y_0(
     .clk  (rx_clk),
 
@@ -201,8 +206,30 @@ rgb2y rgb2y_0(
     .y_o  (y)
 );
 
-wire tx_dv, tx_hs, tx_vs;
+histogram2axi histogram_top(
+    .rx_clk(rx_clk),
+    .microblaze_clk(clk100),
+    
+    .y_i(y),
+    .dv_i(y_dv),
+    
+    
+    .s_axi_araddr(histogram_axi_araddr[7:0]),
+    .s_axi_arvalid(histogram_axi_arvalid),
+    .s_axi_arready(histogram_axi_arready),
+    
+    .s_axi_rdata(histogram_axi_rdata),
+    .s_axi_rresp(histogram_axi_rresp),
+    .s_axi_rvalid(histogram_axi_rvalid),
+    .s_axi_rready(histogram_axi_rready)
+);
 
+// Central module the fir filter. 
+// This module has submodules 
+//  - axi2coeff: Write out to the coefficient input of the fir filter which is form comming from the axi
+//  - pixel_storage: Store 5 row of the image in BRAMs
+//  - systolic_fir: Convolution module
+wire tx_dv, tx_hs, tx_vs;
 
 fir_filter fir_filter_0(
     .clk(rx_clk),
