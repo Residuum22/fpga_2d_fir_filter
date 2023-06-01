@@ -55,15 +55,24 @@ begin
     #50
     calc_flag = 1;
     #10
-    calc_flag = 0;
+    
+    start_of_frame = 1;
+    #20
+    start_of_frame = 0;
+    #20
+    end_sig=1;
+    #10
+    end_sig=0;
+    #50
     start_of_frame = 1;
     px = 0;
     #10
     px = 1;
     #10
+    calc_flag = 0;
     px = 2;
     #10
-    px = 1;
+    px = 255;
     #10
     px = 3;
     #10
@@ -77,7 +86,7 @@ begin
     #10
     end_sig=0;
     
-    #150
+    /*#150
     calc_flag = 1;
     #10
     calc_flag = 0;
@@ -100,7 +109,7 @@ begin
     start_of_frame = 0;
     end_sig=1;
     #10
-    end_sig=0;
+    end_sig=0;*/
     
     
     

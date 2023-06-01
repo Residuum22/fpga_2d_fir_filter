@@ -14,11 +14,13 @@ module histogram_calculator(
     );
     
 reg valid_frame = 0;
+reg next_frame_valid = 0;
 wire valid;
 
-reg calc_flag_dly;
+reg calc_flag_dly = 0;
 wire calc_flag_edge;
 
+// generating edge detection for trigger
 always @(posedge microblaze_clk)
 begin
     calc_flag_dly <= calc_flag;
@@ -26,15 +28,22 @@ end
 
 assign calc_flag_edge = calc_flag & ~calc_flag_dly;
 
-// Signal to calculate histogram for frame
+// when edge is detected, the next frame will be valid
 always@(posedge clk)
-if(calc_flag == 1)
+if(calc_flag_edge == 1)
+    next_frame_valid <= 1'b1;
+else if(valid_frame == 1)
+    next_frame_valid <= 1'b0;
+
+// the current frame start can be determined by checking for the previous end of frame
+always@(posedge clk)
+if(next_frame_valid == 1 & end_of_frame == 1)
     valid_frame <= 1;
-else if(valid == 1 & end_of_frame == 1)
+else if(valid_frame == 1 & end_of_frame == 1)
     valid_frame <= 0;
     
 // validity based on the external validity and the pixel validity
-assign valid = (valid_frame == 1 & in_valid == 1 | end_of_frame == 1) ? 1 : 0;
+assign valid = (valid_frame == 1 & in_valid == 1) ? 1 : 0;
 
 
 wire [15:0] internal_data_rd;
@@ -120,7 +129,7 @@ end
 reg internal_end_of_frame = 0;
 // delaying end of frame singal by one for the correct timing of the copying
 always@(posedge clk)
-if(valid == 1)
+if(valid_frame == 1)
     internal_end_of_frame <= end_of_frame;
 else
     internal_end_of_frame <= 0;
@@ -164,7 +173,7 @@ else if(pre_counter == 2)
 always@(posedge clk)
 if(post_counter == 2)
     post_count <= 0;
-else if(counter == 5)
+else if(counter == 255)
     post_count <= 1;
 
 // === external ram handling =======================================
