@@ -34,13 +34,17 @@ module tb_histogram(
     wire [15:0] out_data;
     wire out_valid;
     
+    reg [7:0] y_i;
+    reg dv_i, hs_i, vs_i;
+    wire dv_o, hs_o, vs_o;
+    
 histogram_calculator hc(
     .clk(clk),
     .rst(rst),
-    .in_pixel(px),
+    .in_pixel(y_i),
     .calc_flag(calc_flag),
-    .in_valid(start_of_frame),
-    .end_of_frame(end_sig),
+    .in_valid(dv_i),
+    .end_of_frame(vs_i),
     .external_addr_rd(0),
 
     .external_data_rd(out_data),
@@ -49,71 +53,116 @@ histogram_calculator hc(
     
 always #5
     clk = ~clk;  
+    
+reg [7:0] col_cntr, row_cntr; 
+integer i, p;
 
-initial
+initial 
 begin
-    #50
-    calc_flag = 1;
-    #10
+    rst <= 1;
+    hs_i <= 0;
+    vs_i <= 0;
+    dv_i <= 0;
     
-    start_of_frame = 1;
+    col_cntr <= 0;
+    row_cntr <= 0;
+    
     #20
-    start_of_frame = 0;
+    rst <= 0;
+    
+    #60
+    dv_i <= 0;
+      
+    #40
+    vs_i <= 1;
+    
     #20
-    end_sig=1;
-    #10
-    end_sig=0;
-    #50
-    start_of_frame = 1;
-    px = 0;
-    #10
-    px = 1;
-    #10
-    calc_flag = 0;
-    px = 2;
-    #10
-    px = 255;
-    #10
-    px = 3;
-    #10
-    px = 4;
-    #10
-    px = 1;
-    #10
-    px = 5;
-    start_of_frame = 0;
-    end_sig=1;
-    #10
-    end_sig=0;
+    vs_i <= 0;
+    calc_flag <=1;
     
-    /*#150
-    calc_flag = 1;
-    #10
-    calc_flag = 0;
-    start_of_frame = 1;
-    px = 0;
-    #10
-    px = 1;
-    #10
-    px = 2;
-    #10
-    px = 1;
-    #10
-    px = 3;
-    #10
-    px = 4;
-    #10
-    px = 1;
-    #10
-    px = 5;
-    start_of_frame = 0;
-    end_sig=1;
-    #10
-    end_sig=0;*/
+    #60
+    hs_i <= 1;
+    calc_flag<=0;
     
+    #20
+    hs_i <= 0;
     
+    #60
+    dv_i <= 0;
     
+    for(p=0;p<10;p=p+1)
+    begin
+        for(i=0;i<15;i=i+1)
+        begin
+            if (i<10)
+            begin
+                #10
+                dv_i <= 1;
+                
+                #160
+                dv_i <= 0;
+                
+                #60
+                hs_i <= 1;
+                
+                #20
+                hs_i <= 0;
+                
+                #60
+                dv_i <= 0;
+            end
+            else
+            begin
+                #10
+                dv_i <= 0;
+                
+                #160
+                dv_i <= 0;
+                
+                #60
+                hs_i <= 1;
+                
+                #20
+                hs_i <= 0;
+                
+                #60
+                dv_i <= 0;
+            end  
+        end
+        
+        #60
+        dv_i <= 0;
+          
+        #40
+        vs_i <= 1;
+        
+        #20
+        vs_i <= 0;
+    end
 end
+
+
+always @(negedge clk)
+begin
+    if (dv_i)
+    begin
+        y_i <= {row_cntr[3:0], col_cntr[3:0]};
+        col_cntr <= col_cntr + 1;
+        if (col_cntr == 15)
+        begin
+            col_cntr <= 0;
+            row_cntr <= row_cntr + 1;
+        end
+    end
+    if (vs_i)
+    begin
+        col_cntr <= 0;
+        row_cntr <= 0;
+    end
+end
+    
+    
+    
     
     
     

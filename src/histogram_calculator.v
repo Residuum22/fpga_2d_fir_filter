@@ -28,6 +28,16 @@ end
 
 assign calc_flag_edge = calc_flag & ~calc_flag_dly;
 
+reg end_of_frame_dly = 0;
+wire end_of_frame_edge;
+
+always @(posedge clk)
+begin
+    end_of_frame_dly <= end_of_frame;
+end
+
+assign end_of_frame_edge = ~end_of_frame & end_of_frame_dly;
+
 // when edge is detected, the next frame will be valid
 always@(posedge clk)
 if(calc_flag_edge == 1)
@@ -37,7 +47,7 @@ else if(valid_frame == 1)
 
 // the current frame start can be determined by checking for the previous end of frame
 always@(posedge clk)
-if(next_frame_valid == 1 & end_of_frame == 1)
+if(next_frame_valid == 1 & end_of_frame_edge == 1)
     valid_frame <= 1;
 else if(valid_frame == 1 & end_of_frame == 1)
     valid_frame <= 0;
