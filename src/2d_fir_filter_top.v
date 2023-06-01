@@ -217,7 +217,7 @@ histogram2axi histogram_top(
     
     .y_i(y),
     .dv_i(y_dv),
-    .vs_i(vs_i),
+    .vs_i(y_vs),
     
     .cpu_trigger(histogram_en),
     .cpu_signal_done(histogram_it),

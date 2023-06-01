@@ -7,9 +7,9 @@ module histogram_calculator(
     input       calc_flag,
     input       in_valid,
     input       end_of_frame,
-    input [7:0] external_addr_rd,
+    (* mark_debug="true" *) input [7:0] external_addr_rd,
 
-    output [15:0] external_data_rd,
+    (* mark_debug="true" *) output [15:0] external_data_rd,
     output        out_valid
     );
     
@@ -29,7 +29,7 @@ end
 assign calc_flag_edge = calc_flag & ~calc_flag_dly;
 
 reg end_of_frame_dly = 0;
-wire end_of_frame_edge;
+(* mark_debug="true" *) wire end_of_frame_edge;
 
 always @(posedge clk)
 begin

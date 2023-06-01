@@ -26,12 +26,12 @@ module axi_data2coeff(
     input rst,
     
     //Regiszter ?r?si interf?sz.
-    (* mark_debug="true" *) input  [7:0]           wr_addr,        //?r?si c?m
-    (* mark_debug="true" *) input                  wr_en,          //?r?s enged?lyez? jel
-    (* mark_debug="true" *) input  [31:0]          wr_data,        //?r?si adat
-    (* mark_debug="true" *) input  [3:0]           wr_strb,        //B?jt enged?lyez? jelek
+    input  [7:0]           wr_addr,
+    input                  wr_en, 
+    input  [31:0]          wr_data,
+    input  [3:0]           wr_strb,
 
-    (* mark_debug="true" *) output signed [15:0] coeff00, coeff01, coeff02, coeff03, coeff04,
+    output signed [15:0] coeff00, coeff01, coeff02, coeff03, coeff04,
     output signed [15:0] coeff10, coeff11, coeff12, coeff13, coeff14,
     output signed [15:0] coeff20, coeff21, coeff22, coeff23, coeff24,
     output signed [15:0] coeff30, coeff31, coeff32, coeff33, coeff34,

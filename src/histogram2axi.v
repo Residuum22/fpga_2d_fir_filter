@@ -12,8 +12,8 @@ module histogram2axi(
     input cpu_trigger,
     output cpu_signal_done,
     
-    input  wire [7:0]           s_axi_araddr,
-    input  wire                 s_axi_arvalid,
+    input  wire [31:0]          s_axi_araddr,
+    (* mark_debug="true" *) input  wire                 s_axi_arvalid,
     output wire                 s_axi_arready,
     
     //AXI4-Lite olvas?si adat csatorna.
@@ -23,7 +23,7 @@ module histogram2axi(
     input  wire                 s_axi_rready        
     );
     
-wire  [7:0]          rd_addr;
+wire [31:0]          rd_addr;
 wire                 rd_en;        
 wire [31:0]          rd_data;
 
@@ -52,7 +52,7 @@ axi4_lite_if
 );
 
 wire [7:0] histogram_byte_addr;
-assign histogram_byte_addr = rd_addr >> 2;
+assign histogram_byte_addr = rd_addr[9:2];
 
 histogram_calculator hisitogram_calc(
     .clk(rx_clk),
@@ -63,7 +63,6 @@ histogram_calculator hisitogram_calc(
     .in_pixel(y_i),
     .in_valid(dv_i),
     .calc_flag(cpu_trigger),
-    //.base_address(),
     .end_of_frame(vs_i),
     
     .external_addr_rd(histogram_byte_addr),
