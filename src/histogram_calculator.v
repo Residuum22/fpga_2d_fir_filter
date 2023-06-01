@@ -189,6 +189,6 @@ always@(posedge clk)
     external_addr_wr <= internal_addr_rd; 
     
 // valid flasg set to signal cpu
-assign out_valid = post_counter == 1;
+assign out_valid = post_counter == 2;
     
 endmodule
