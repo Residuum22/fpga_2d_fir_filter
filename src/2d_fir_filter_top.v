@@ -55,6 +55,8 @@ wire [31:0] histogram_axi_rdata;
 wire histogram_axi_rvalid, histogram_axi_rready;
 wire [1:0] histogram_axi_rresp;
 
+wire histogram_it, histogram_en;
+
 // Microbalze block design wrapper to give
 // clk reset signal to the microbalze
 // wire out the axi lite bus with uart.
@@ -87,6 +89,9 @@ fir_microblaze_wrapper microbalze
    .M04_AXI_0_rready(histogram_axi_rready),
    .M04_AXI_0_rresp(histogram_axi_rresp),
    .M04_AXI_0_rvalid(histogram_axi_rvalid),
+   
+   .histogram_it(histogram_it),
+   .histogram_enable_tri_o(histogram_en),
     
     // Uart output.
    .uart_rtl_0_rxd(uart_rtl_0_rxd),
@@ -208,12 +213,14 @@ rgb2y rgb2y_0(
 
 histogram2axi histogram_top(
     .rx_clk(rx_clk),
-    .microblaze_clk(clk100),
+    .microblaze_clk(clk100M),
     
     .y_i(y),
     .dv_i(y_dv),
-    .cpu_trigger(),
-    .cpu_signal_done(),
+    .vs_i(vs_i),
+    
+    .cpu_trigger(histogram_en),
+    .cpu_signal_done(histogram_it),
     
     .s_axi_araddr(histogram_axi_araddr[7:0]),
     .s_axi_arvalid(histogram_axi_arvalid),

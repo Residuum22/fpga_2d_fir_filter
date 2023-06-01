@@ -8,8 +8,8 @@ module histogram2axi(
     input [7:0] y_i,
     input dv_i,
     input vs_i,
-    input cpu_trigger,
     
+    input cpu_trigger,
     output cpu_signal_done,
     
     input  wire [7:0]           s_axi_araddr,
@@ -51,6 +51,9 @@ axi4_lite_if
     .rd_data(rd_data)
 );
 
+wire [7:0] histogram_byte_addr;
+assign histogram_byte_addr = rd_addr >> 2;
+
 histogram_calculator hisitogram_calc(
     .clk(rx_clk),
     .microblaze_clk(microblaze_clk),
@@ -63,7 +66,7 @@ histogram_calculator hisitogram_calc(
     //.base_address(),
     .end_of_frame(vs_i),
     
-    .external_addr_rd(rd_addr),
+    .external_addr_rd(histogram_byte_addr),
     .external_data_rd(rd_data),
     .out_valid(cpu_signal_done)
 );

@@ -13,70 +13,80 @@ module histogram_calculator(
     output        out_valid
     );
     
-    reg valid_frame = 0;
-    wire valid;
+reg valid_frame = 0;
+wire valid;
+
+reg calc_flag_dly;
+wire calc_flag_edge;
+
+always @(posedge microblaze_clk)
+begin
+    calc_flag_dly <= calc_flag;
+end
+
+assign calc_flag_edge = calc_flag & ~calc_flag_dly;
+
+// Signal to calculate histogram for frame
+always@(posedge clk)
+if(calc_flag == 1)
+    valid_frame <= 1;
+else if(valid == 1 & end_of_frame == 1)
+    valid_frame <= 0;
     
-    // Signal to calculate histogram for frame
-    always@(posedge clk)
-    if(calc_flag == 1)
-        valid_frame <= 1;
-    else if(valid == 1 & end_of_frame == 1)
-        valid_frame <= 0;
-        
-    // validity based on the external validity and the pixel validity
-    assign valid = (valid_frame == 1 & in_valid == 1 | end_of_frame == 1) ? 1 : 0;
+// validity based on the external validity and the pixel validity
+assign valid = (valid_frame == 1 & in_valid == 1 | end_of_frame == 1) ? 1 : 0;
+
+
+wire [15:0] internal_data_rd;
+wire [15:0] internal_data_wr;
+
+reg  [10:0] internal_addr_rd = 0;
+reg  [10:0] internal_addr_wr = 0;
+
+reg  [2:0]  internal_ena_wr = 0;
+
+// Internal ram for storing the currently used histogram data
+dp_bram 
+#(
+    .DEPTH(256),
+    .WIDTH(16)
+) internal_ram
+(
+    .clk(clk),
+
+    .we_a(internal_ena_wr[1] | internal_ena_wr[2]),
+
+    .addr_a(internal_addr_wr),
+    .addr_b(internal_addr_rd),
     
+    .din_a(internal_data_wr),
+    .dout_b(internal_data_rd)
+);
+
+reg [15:0]  external_addr_wr = 0;
+reg [1:0]   external_ena_wr = 0;
+
+// external ram for the microblaze to access
+true_dp_bram 
+#(
+    .DEPTH(256),
+    .WIDTH(16)
+) external_ram
+(
+    .clk_a(clk),
+    .clk_b(microblaze_clk),
+
+    .we_a(external_ena_wr[1]),
+
+    .addr_a(external_addr_wr),
+    .addr_b(external_addr_rd),
     
-    wire [15:0] internal_data_rd;
-    wire [15:0] internal_data_wr;
-    
-    reg  [10:0] internal_addr_rd = 0;
-    reg  [10:0] internal_addr_wr = 0;
-    
-    reg  [2:0]  internal_ena_wr = 0;
-    
-    // Internal ram for storing the currently used histogram data
-    dp_bram 
-    #(
-        .DEPTH(256),
-        .WIDTH(16)
-    ) internal_ram
-    (
-        .clk(clk),
-    
-        .we_a(internal_ena_wr[1] | internal_ena_wr[2]),
-    
-        .addr_a(internal_addr_wr),
-        .addr_b(internal_addr_rd),
-        
-        .din_a(internal_data_wr),
-        .dout_b(internal_data_rd)
-    );
-    
-    reg [15:0]  external_addr_wr = 0;
-    reg [1:0]   external_ena_wr = 0;
-    
-    // external ram for the microblaze to access
-    true_dp_bram 
-    #(
-        .DEPTH(256),
-        .WIDTH(16)
-    ) external_ram
-    (
-        .clk_a(clk),
-        .clk_b(microblaze_clk),
-    
-        .we_a(external_ena_wr[1]),
-    
-        .addr_a(external_addr_wr),
-        .addr_b(external_addr_rd),
-        
-        .din_a(internal_data_rd),
-        .dout_b(external_data_rd)
-    );
-       
-    reg [7:0] counter = 0;
-    reg       frame_reset = 0;
+    .din_a(internal_data_rd),
+    .dout_b(external_data_rd)
+);
+   
+reg [7:0] counter = 0;
+reg       frame_reset = 0;
 
 // Internal data write needs to be set to a valid value when computing and to 0 when clearing phase
 assign internal_data_wr = frame_reset == 0 ? internal_data_rd + 1 : 0;
