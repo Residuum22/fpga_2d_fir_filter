@@ -31,6 +31,7 @@ module tb_histogram(
     reg start_of_frame = 0;
     reg end_sig = 0;
     
+    reg [7:0] externa_addr = 0;
     wire [15:0] out_data;
     wire out_valid;
     
@@ -40,12 +41,13 @@ module tb_histogram(
     
 histogram_calculator hc(
     .clk(clk),
+    .microblaze_clk(clk),
     .rst(rst),
     .in_pixel(y_i),
     .calc_flag(calc_flag),
     .in_valid(dv_i),
     .end_of_frame(vs_i),
-    .external_addr_rd(0),
+    .external_addr_rd(externa_addr),
 
     .external_data_rd(out_data),
     .out_valid(out_valid)
@@ -56,6 +58,18 @@ always #5
     
 reg [7:0] col_cntr, row_cntr; 
 integer i, p;
+integer c;
+
+initial 
+begin
+#18000
+for(c = 0; c < 256; c = c + 1)
+begin
+#10
+    externa_addr = c;
+end
+
+end
 
 initial 
 begin
@@ -90,11 +104,11 @@ begin
     #60
     dv_i <= 0;
     
-    for(p=0;p<10;p=p+1)
+    for(p=0;p<20;p=p+1)
     begin
-        for(i=0;i<15;i=i+1)
+        for(i=0;i<20;i=i+1)
         begin
-            if (i<10)
+            if (i<16)
             begin
                 #10
                 dv_i <= 1;
