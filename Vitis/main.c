@@ -219,7 +219,7 @@ int main()
 			for (int i = 0; i < 256; i++)
 			{
 				data = Xil_In32(XPAR_M04_AXI_0_BASEADDR + i*4);
-				sprintf(sendBuffer, "%d\r\n", (u8)data);
+				sprintf(sendBuffer, "%d\r\n", (u16)data);
 				while (XUartNs550_Send(&UartInst, (u8*)sendBuffer, strlen(sendBuffer)) == 0);
 
 			}

@@ -222,7 +222,7 @@ histogram2axi histogram_top(
     .cpu_trigger(histogram_en),
     .cpu_signal_done(histogram_it),
     
-    .s_axi_araddr(histogram_axi_araddr[7:0]),
+    .s_axi_araddr(histogram_axi_araddr),
     .s_axi_arvalid(histogram_axi_arvalid),
     .s_axi_arready(histogram_axi_arready),
     

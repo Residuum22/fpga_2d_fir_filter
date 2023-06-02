@@ -39,13 +39,13 @@ module axi4_lite_if #(
     input  wire                 s_axi_rready,
     
     //Regiszter ?r?si interf?sz.
-    output reg  [7:0]           wr_addr,        //?r?si c?m
+    output reg  [ADDR_BITS-1:0] wr_addr,        //?r?si c?m
     output wire                 wr_en,          //?r?s enged?lyez? jel
     output reg  [31:0]          wr_data,        //?r?si adat
     output reg  [3:0]           wr_strb,        //B?jt enged?lyez? jelek
     
     //Regiszter olvas?si interf?sz.
-    output reg  [7:0]           rd_addr,        //Olvas?si c?m
+    output reg  [ADDR_BITS-1:0] rd_addr,        //Olvas?si c?m
     output wire                 rd_en,          //Olvas?s enged?lyez? jel
     input  wire [31:0]          rd_data         //Olvas?si adat
 );

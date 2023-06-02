@@ -29,7 +29,7 @@ wire [31:0]          rd_data;
 
 axi4_lite_if
 #(
-    .ADDR_BITS(8)
+    .ADDR_BITS(10)
 )
 axi4_lite_if
 (
@@ -51,9 +51,6 @@ axi4_lite_if
     .rd_data(rd_data)
 );
 
-wire [7:0] histogram_byte_addr;
-assign histogram_byte_addr = rd_addr[9:2];
-
 histogram_calculator hisitogram_calc(
     .clk(rx_clk),
     .microblaze_clk(microblaze_clk),
@@ -65,7 +62,7 @@ histogram_calculator hisitogram_calc(
     .calc_flag(cpu_trigger),
     .end_of_frame(vs_i),
     
-    .external_addr_rd(histogram_byte_addr),
+    .external_addr_rd(rd_addr[9:2]),
     .external_data_rd(rd_data),
     .out_valid(cpu_signal_done)
 );
