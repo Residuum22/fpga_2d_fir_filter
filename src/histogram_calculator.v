@@ -75,7 +75,7 @@ dp_bram_write_first
 (
     .clk(clk),
 
-    .we_a(internal_ena_wr[1] | internal_ena_wr[2]),
+    .we_a(internal_ena_wr[1] /*| internal_ena_wr[2]*/),
 
     .addr_a(internal_addr_wr),
     .addr_b(internal_addr_rd),

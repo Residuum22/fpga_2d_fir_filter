@@ -47,10 +47,23 @@ module tb_filter_window();
     wire [7:0] out_pixel;
     wire out_valid;
     
+    reg dv_i = 0;
+    reg hs_i = 0;
+    reg vs_i = 0;
+    wire dv_o;
+    wire hs_o;
+    wire vs_o;
+    
     cascade_systolic_fir filt(
         .clk(clk),
         .rst(rst),
         .in_valid(valid),
+        .dv_i(dv_i), 
+        .hs_i(hs_i), 
+        .vs_i(vs_i),
+        .dv_o(dv_o), 
+        .hs_o(hs_o), 
+        .vs_o(vs_o),
 		.pixel0(pixel0),
 		.pixel1(pixel1),
 		.pixel2(pixel2),
@@ -91,6 +104,9 @@ module tb_filter_window();
     rst = 0;
     #10
     valid = 1;
+    dv_i = 1; 
+    hs_i = 1; 
+    vs_i = 1;
     pixel0 = pixel00;
     pixel1 = pixel10;
     pixel2 = pixel20;
@@ -110,6 +126,9 @@ module tb_filter_window();
     pixel4 = pixel42;
     #10
     valid = 0;
+    dv_i = 0; 
+    hs_i = 0; 
+    vs_i = 0;
     pixel0 = pixel03;
     pixel1 = pixel13;
     pixel2 = pixel23;

@@ -35,7 +35,7 @@ module tb_histogram(
     wire [15:0] out_data;
     wire out_valid;
     
-    reg [7:0] y_i;
+    wire [7:0] y_i;
     reg dv_i, hs_i, vs_i;
     wire dv_o, hs_o, vs_o;
     
@@ -83,20 +83,20 @@ begin
     
     #20
     rst <= 0;
+    calc_flag <=1;
     
     #60
     dv_i <= 0;
+    calc_flag<=0;
       
     #40
     vs_i <= 1;
     
     #20
     vs_i <= 0;
-    calc_flag <=1;
     
     #60
     hs_i <= 1;
-    calc_flag<=0;
     
     #20
     hs_i <= 0;
@@ -160,7 +160,7 @@ always @(negedge clk)
 begin
     if (dv_i)
     begin
-        y_i <= {row_cntr[3:0], col_cntr[3:0]};
+        
         col_cntr <= col_cntr + 1;
         if (col_cntr == 15)
         begin
@@ -175,7 +175,7 @@ begin
     end
 end
     
-    
+assign y_i = {row_cntr[3:0], col_cntr[3:0]};
     
     
     
