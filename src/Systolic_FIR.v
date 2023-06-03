@@ -155,16 +155,16 @@ module cascade_systolic_fir
     output out_valid
 );
 
-reg [2:0] sync_dly[10:0];
+reg [2:0] sync_dly[11:0];
 integer cntr;
 // Assign controls 
 always @ (posedge clk)
-for (cntr=0; cntr<11; cntr=cntr+1)
+for (cntr=0; cntr<12; cntr=cntr+1)
     sync_dly[cntr] <= (cntr==0) ? {dv_i, hs_i, vs_i} : sync_dly[cntr-1];
     
-assign dv_o = sync_dly[10][2];
-assign hs_o = sync_dly[10][1];
-assign vs_o = sync_dly[10][0];
+assign dv_o = sync_dly[11][2];
+assign hs_o = sync_dly[11][1];
+assign vs_o = sync_dly[11][0];
     
 // packing into array for systolic filter generation
 wire [15:0] coeff [24:0];
