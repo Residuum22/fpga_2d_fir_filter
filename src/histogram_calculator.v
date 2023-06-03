@@ -64,7 +64,7 @@ wire [31:0] internal_data_wr;
 reg  [10:0] internal_addr_rd = 0;
 reg  [10:0] internal_addr_wr = 0;
 
-reg  [2:0]  internal_ena_wr = 0;
+reg  [1:0]  internal_ena_wr = 0;
 
 // Internal ram for storing the currently used histogram data
 dp_bram_write_first 
@@ -75,7 +75,7 @@ dp_bram_write_first
 (
     .clk(clk),
 
-    .we_a(internal_ena_wr[1] /*| internal_ena_wr[2]*/),
+    .we_a(internal_ena_wr[1]),
 
     .addr_a(internal_addr_wr),
     .addr_b(internal_addr_rd),
@@ -125,17 +125,17 @@ if(frame_reset == 0)        // calculation phase
 begin
     internal_addr_rd <= {3'b0, in_pixel};
     internal_addr_wr <= internal_addr_rd;
-    internal_ena_wr  <= {internal_ena_wr[1:0], valid};
+    internal_ena_wr  <= {internal_ena_wr[0], valid};
 end
 else if(frame_copy == 1)    // copying and reseting the internal ram fields
 begin
     internal_addr_rd <= {3'b0, counter};
     internal_addr_wr <= internal_addr_rd;
-    internal_ena_wr <= {internal_ena_wr[1:0], 1'b1};
+    internal_ena_wr <= {internal_ena_wr[0], 1'b1};
 end
 else if(post_count == 1)    // needs for finishing the reseting of the internal ram
 begin
-    internal_ena_wr <= {internal_ena_wr[1:0], 1'b0};
+    internal_ena_wr <= {internal_ena_wr[0], 1'b0};
     internal_addr_wr <= internal_addr_rd;
 end
     
