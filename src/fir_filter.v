@@ -127,7 +127,7 @@ storage pixel_buffer(
 cascade_systolic_fir systolic_fir(
     .clk(clk), // The unit runs from the rx_clk.
     .rst(rst),
-    .in_valid(dv_y),
+    //.in_valid(),
     .dv_i(dv_y),
     .hs_i(hs_y),
     .vs_i(vs_y),
@@ -169,7 +169,7 @@ cascade_systolic_fir systolic_fir(
     
     // Filtered pixel
     .out_pixel(y_o),
-    .out_valid(dv_o),
+    //.out_valid(),
     .dv_o(dv_o),
     .vs_o(vs_o),
     .hs_o(hs_o)
