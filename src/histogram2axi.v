@@ -13,7 +13,7 @@ module histogram2axi(
     output cpu_signal_done,
     
     input  wire [31:0]          s_axi_araddr,
-    (* mark_debug="true" *) input  wire                 s_axi_arvalid,
+    input  wire                 s_axi_arvalid,
     output wire                 s_axi_arready,
     
     //AXI4-Lite olvas?si adat csatorna.
@@ -64,6 +64,7 @@ histogram_calculator hisitogram_calc(
     
     .external_addr_rd(rd_addr[9:2]),
     .external_data_rd(rd_data),
+    .external_rd_en(rd_en),
     .out_valid(cpu_signal_done)
 );
 endmodule

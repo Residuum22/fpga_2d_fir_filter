@@ -127,7 +127,10 @@ storage pixel_buffer(
 cascade_systolic_fir systolic_fir(
     .clk(clk), // The unit runs from the rx_clk.
     .rst(rst),
-    .in_valid(1), // This is a lefover function this is the enable bit for the systolic fir.
+    .in_valid(dv_y),
+    .dv_i(dv_y),
+    .hs_i(hs_y),
+    .vs_i(vs_y),
     // Comment: The systolic fir is always running soin this way there is zero-padding on the image.
 
     // The incoming 5 pixels for the systolic fir.
@@ -165,17 +168,16 @@ cascade_systolic_fir systolic_fir(
     .coeff44(coeff44),
     
     // Filtered pixel
-    .out_pixel(y_o)
+    .out_pixel(y_o),
+    .out_valid(dv_o),
+    .dv_o(dv_o),
+    .vs_o(vs_o),
+    .hs_o(hs_o)
 );
 
 // Because this is a gary scaled image all output has the same value.
 assign r_o = y_o;
 assign g_o = y_o;
 assign b_o = y_o;
-
-// The output image has only one clk delay.
-assign dv_o = dv_y;
-assign vs_o = vs_y;
-assign hs_o = hs_y;
 
 endmodule

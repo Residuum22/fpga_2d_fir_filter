@@ -139,6 +139,8 @@ module cascade_systolic_fir
     input clk,
     input rst,
     input in_valid,
+    
+    input dv_i, hs_i, vs_i,
 
     input [7:0] pixel0, pixel1, pixel2, pixel3, pixel4,
     
@@ -149,9 +151,21 @@ module cascade_systolic_fir
     input signed [15:0] coeff40, coeff41, coeff42, coeff43, coeff44,
 
     output [7:0] out_pixel,
+    output dv_o, hs_o, vs_o,
     output out_valid
 );
 
+reg [2:0] sync_dly[10:0];
+integer cntr;
+// Assign controls 
+always @ (posedge clk)
+for (cntr=0; cntr<11; cntr=cntr+1)
+    sync_dly[cntr] <= (cntr==0) ? {dv_i, hs_i, vs_i} : sync_dly[cntr-1];
+    
+assign dv_o = sync_dly[10][2];
+assign hs_o = sync_dly[10][1];
+assign vs_o = sync_dly[10][0];
+    
 // packing into array for systolic filter generation
 wire [15:0] coeff [24:0];
 

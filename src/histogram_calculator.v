@@ -7,9 +7,11 @@ module histogram_calculator(
     input       calc_flag,
     input       in_valid,
     input       end_of_frame,
-    (* mark_debug="true" *) input [7:0] external_addr_rd,
-
-    (* mark_debug="true" *) output [15:0] external_data_rd,
+    
+    (* mark_debug="true" *) input [7:0]   external_addr_rd,
+    (* mark_debug="true" *) output [31:0] external_data_rd,
+    (* mark_debug="true" *) input         external_rd_en,
+    
     output        out_valid
     );
     
@@ -29,7 +31,7 @@ end
 assign calc_flag_edge = calc_flag & ~calc_flag_dly;
 
 reg end_of_frame_dly = 0;
-(* mark_debug="true" *) wire end_of_frame_edge;
+wire end_of_frame_edge;
 
 always @(posedge clk)
 begin
@@ -56,8 +58,8 @@ else if(valid_frame == 1 & end_of_frame == 1)
 assign valid = (valid_frame == 1 & in_valid == 1) ? 1 : 0;
 
 
-wire [15:0] internal_data_rd;
-wire [15:0] internal_data_wr;
+wire [31:0] internal_data_rd;
+wire [31:0] internal_data_wr;
 
 reg  [10:0] internal_addr_rd = 0;
 reg  [10:0] internal_addr_wr = 0;
@@ -65,10 +67,10 @@ reg  [10:0] internal_addr_wr = 0;
 reg  [2:0]  internal_ena_wr = 0;
 
 // Internal ram for storing the currently used histogram data
-dp_bram 
+dp_bram_write_first 
 #(
     .DEPTH(256),
-    .WIDTH(16)
+    .WIDTH(32)
 ) internal_ram
 (
     .clk(clk),
@@ -82,20 +84,21 @@ dp_bram
     .dout_b(internal_data_rd)
 );
 
-reg [15:0]  external_addr_wr = 0;
+reg [31:0]  external_addr_wr = 0;
 reg [1:0]   external_ena_wr = 0;
 
 // external ram for the microblaze to access
 true_dp_bram 
 #(
     .DEPTH(256),
-    .WIDTH(16)
+    .WIDTH(32)
 ) external_ram
 (
     .clk_a(clk),
     .clk_b(microblaze_clk),
 
     .we_a(external_ena_wr[1]),
+    .re_b(external_rd_en),
 
     .addr_a(external_addr_wr),
     .addr_b(external_addr_rd),
