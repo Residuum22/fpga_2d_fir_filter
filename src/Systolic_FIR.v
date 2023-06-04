@@ -48,15 +48,12 @@ endmodule
 
 module Systolic_FIR(
     input clk,
-    input rst,
-    input in_valid,
-    
+    input rst,    
     input [7:0] pixel,
     
     input signed [15:0] coeff0, coeff1, coeff2, coeff3, coeff4,
     
-    output signed [35:0] out_pixel,
-    output out_valid
+    output signed [35:0] out_pixel
     );
 
 // intrenal wiring
@@ -116,18 +113,8 @@ fir_dsp #(.INPUT_DELAY(1)) fir4
     .a_out(),
     .p(p_cascade[4])
 );
-
-reg [10:0] counter = 0;
-
-// handling validity
-always@(posedge clk)
-if(rst)
-    counter <= 0;
-else
-    counter <= {counter[9:0], in_valid};
     
 // handling output
-assign out_valid = counter[10];
 assign out_pixel = p_cascade[4];
    
 endmodule
@@ -138,7 +125,6 @@ module cascade_systolic_fir
 (
     input clk,
     input rst,
-    input in_valid,
     
     input dv_i, hs_i, vs_i,
 
@@ -151,8 +137,7 @@ module cascade_systolic_fir
     input signed [15:0] coeff40, coeff41, coeff42, coeff43, coeff44,
 
     output [7:0] out_pixel,
-    output dv_o, hs_o, vs_o,
-    output out_valid
+    output dv_o, hs_o, vs_o
 );
 
 reg [2:0] sync_dly[11:0];
@@ -203,8 +188,6 @@ assign pixels[2] = pixel2;
 assign pixels[3] = pixel3;
 assign pixels[4] = pixel4;
 
-wire [4:0] out_valids;
-
 wire signed [35:0] sub_res [4:0];
 
 genvar i;
@@ -217,15 +200,13 @@ generate
         (
             .clk(clk),
             .rst(rst),
-            .in_valid(in_valid),
             .pixel(pixels[i]),
             .coeff0(coeff[i*5 + 0]),
             .coeff1(coeff[i*5 + 1]),
             .coeff2(coeff[i*5 + 2]),
             .coeff3(coeff[i*5 + 3]),
             .coeff4(coeff[i*5 + 4]),
-            .out_pixel(sub_res[i]),
-            .out_valid(out_valids[i])
+            .out_pixel(sub_res[i])
         );
     end
 endgenerate
@@ -236,19 +217,7 @@ reg signed [35:0] sum;
 always@(posedge clk)
     sum <= sub_res[0] + sub_res[1] + sub_res[2] + sub_res[3] + sub_res[4];
     
-reg temp_out_valid = 0;
-
-// outvalid moved into a temporary buffer to be able to reset
-always@(posedge clk)
-if(rst)
-    temp_out_valid <= 0;
-else
-    temp_out_valid <= out_valids[0];
-    
 // setting outputs
-assign out_valid = temp_out_valid;
 assign out_pixel = sum[35] == 1 ? 8'h00 : (sum > 39'h0000FF0000 ? 8'hFF : sum[24:16]);
-
-
 
 endmodule
