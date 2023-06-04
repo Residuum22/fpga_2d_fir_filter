@@ -3,3 +3,8 @@
 *.jou
 *.str
 .Xil
+Vitis/.metadata
+Vitis/RemoteSystemsTempFiles
+Vitis/fir_project_top
+Vitis/fir_project_platform
+Vitis/.analytics
