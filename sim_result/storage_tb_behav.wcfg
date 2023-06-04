@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="storage_tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="storage_tb" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="1,504.000 ns"></ZoomStartTime>
+      <ZoomEndTime time="1,790.401 ns"></ZoomEndTime>
+      <Cursor1Time time="1,570.000 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="146"></NameColumnWidth>
+      <ValueColumnWidth column_width="93"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="21" />
+   <wvobject fp_name="/storage_tb/clk" type="logic">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/rst" type="logic">
+      <obj_property name="ElementShortName">rst</obj_property>
+      <obj_property name="ObjectShortName">rst</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/y_i" type="array">
+      <obj_property name="ElementShortName">y_i[7:0]</obj_property>
+      <obj_property name="ObjectShortName">y_i[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/dv_i" type="logic">
+      <obj_property name="ElementShortName">dv_i</obj_property>
+      <obj_property name="ObjectShortName">dv_i</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/hs_i" type="logic">
+      <obj_property name="ElementShortName">hs_i</obj_property>
+      <obj_property name="ObjectShortName">hs_i</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/vs_i" type="logic">
+      <obj_property name="ElementShortName">vs_i</obj_property>
+      <obj_property name="ObjectShortName">vs_i</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/dv_o" type="logic">
+      <obj_property name="ElementShortName">dv_o</obj_property>
+      <obj_property name="ObjectShortName">dv_o</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/hs_o" type="logic">
+      <obj_property name="ElementShortName">hs_o</obj_property>
+      <obj_property name="ObjectShortName">hs_o</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/vs_o" type="logic">
+      <obj_property name="ElementShortName">vs_o</obj_property>
+      <obj_property name="ObjectShortName">vs_o</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/x_index" type="array">
+      <obj_property name="ElementShortName">x_index[10:0]</obj_property>
+      <obj_property name="ObjectShortName">x_index[10:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/y_index" type="array">
+      <obj_property name="ElementShortName">y_index[9:0]</obj_property>
+      <obj_property name="ObjectShortName">y_index[9:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/pix_mux" type="array">
+      <obj_property name="ElementShortName">pix_mux[7:0]</obj_property>
+      <obj_property name="ObjectShortName">pix_mux[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/p0" type="array">
+      <obj_property name="ElementShortName">p0[7:0]</obj_property>
+      <obj_property name="ObjectShortName">p0[7:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/p1" type="array">
+      <obj_property name="ElementShortName">p1[7:0]</obj_property>
+      <obj_property name="ObjectShortName">p1[7:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/p2" type="array">
+      <obj_property name="ElementShortName">p2[7:0]</obj_property>
+      <obj_property name="ObjectShortName">p2[7:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/p3" type="array">
+      <obj_property name="ElementShortName">p3[7:0]</obj_property>
+      <obj_property name="ObjectShortName">p3[7:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/p4" type="array">
+      <obj_property name="ElementShortName">p4[7:0]</obj_property>
+      <obj_property name="ObjectShortName">p4[7:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/col_cntr" type="array">
+      <obj_property name="ElementShortName">col_cntr[7:0]</obj_property>
+      <obj_property name="ObjectShortName">col_cntr[7:0]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/row_cntr" type="array">
+      <obj_property name="ElementShortName">row_cntr[7:0]</obj_property>
+      <obj_property name="ObjectShortName">row_cntr[7:0]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/i" type="array">
+      <obj_property name="ElementShortName">i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">i[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/storage_tb/p" type="array">
+      <obj_property name="ElementShortName">p[31:0]</obj_property>
+      <obj_property name="ObjectShortName">p[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+</wave_config>

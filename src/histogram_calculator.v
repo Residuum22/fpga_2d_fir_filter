@@ -8,9 +8,9 @@ module histogram_calculator(
     input       in_valid,
     input       end_of_frame,
     
-    (* mark_debug="true" *) input [7:0]   external_addr_rd,
-    (* mark_debug="true" *) output [31:0] external_data_rd,
-    (* mark_debug="true" *) input         external_rd_en,
+    input [7:0]   external_addr_rd,
+    output [31:0] external_data_rd,
+    input         external_rd_en,
     
     output        out_valid
     );

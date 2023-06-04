@@ -15,30 +15,39 @@
 #define ST_INVALID		255
 
 #define FIXED_POINT_FRACTIONAL_BITS 8
-#define UART_DEVICE_ID		XPAR_AXI_UART16550_0_DEVICE_ID
-#define UART_BUFFER_SIZE	2000
 #define COEFF_BUFFER_SIZE	25
 
+// Define UART DEVICE ID, buffer size and create buffer for received data
+#define UART_DEVICE_ID		XPAR_AXI_UART16550_0_DEVICE_ID
+#define UART_BUFFER_SIZE	2000
+// Uart high level driver instance declaration
 static XUartNs550 UartInst;
 u8 RecvBuffer[UART_BUFFER_SIZE];
 
-static XGpio GPIOInst;
 #define GPIO_DEVICE_ID	XPAR_AXI_GPIO_0_DEVICE_ID
+// GPIO high level driver instance
+static XGpio GPIOInst;
 
-
-static XIntc IntcInst;
 #define INT_DEVICE_ID 	XPAR_INTC_0_DEVICE_ID
+// High level driver for external interrupt.
+// This interrupt will be used for histogram valid data output port.
+static XIntc IntcInst;
 
+// This function convert float into a fixed point value with the given
+// fractional bits.
 short float2fixed_point(float number)
 {
 	return (short)(round(number * (1 << FIXED_POINT_FRACTIONAL_BITS)));
 }
 
+// Default initialization of the GPIO pheripheral. This will start the histogram calculator.
 void GPIO_Init()
 {
 	XGpio_Initialize(&GPIOInst, GPIO_DEVICE_ID);
 }
 
+// Default initialization of the UART16650 pheripheral. 
+// Self test is important to make sure the pheriheral syntetized correctly.
 int UART_Init()
 {
 	int Status = ST_COEFF_RECV;
@@ -55,6 +64,8 @@ int UART_Init()
 	return XST_SUCCESS;
 }
 
+// This functuon convert the float coefficients into 16bit fix point values
+// and send all the 25 coeff to the coeff2axi module over axi lite.
 void send_coeff_axi(float* coeff_array)
 {
 	for(int i = 0; i < 25; i++)
@@ -66,6 +77,7 @@ void send_coeff_axi(float* coeff_array)
 	}
 }
 
+// This function convert string data to float coefficients.
 int process_coeff(u8* RecvBuffer, int* ReceivedCount, float* coeff_array)
 {
     int array_indexer = 0;
@@ -128,23 +140,24 @@ int process_coeff(u8* RecvBuffer, int* ReceivedCount, float* coeff_array)
 	return dataValid;
 }
 
+// This function generate an impulse on the gpio pheripheral
 void get_histogram()
 {
-	u32 cntr = 0;
 	XGpio_DiscreteSet(&GPIOInst, 1, 1 << 0);
-	for (int i = 0; i < 100; i++)
-		cntr++;
 	XGpio_DiscreteClear(&GPIOInst, 1, 1 << 0);
 }
 
 static bool histogram_flag = false;
 
+// Histogram handler function is just set a flag
+// to get the fastest execution time. 
 void interrupt_handler()
 {
 	histogram_flag = true;
-	XUartNs550_Send(&UartInst, "Histogram\r\n", strlen("Histogram\r\n"));
 }
 
+// Initialize interrupt, do a self test, connect and start. 
+// Initialize exception also. 
 int interrupt_init()
 {
 	int Status;
@@ -184,15 +197,12 @@ int interrupt_init()
 	return XST_SUCCESS;
 }
 
-
 int main()
 {
     init_platform();
 
     int Status = ST_COEFF_RECV;
-
     int ReceivedCount = 0;
-
     float coeff_array[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     // Init uart and self test.
@@ -214,14 +224,19 @@ int main()
 
 		if (histogram_flag)
 		{
-			u32 data;
 			char sendBuffer[255];
+			u32 data;
+			u32 buffer[256];
 			for (int i = 0; i < 256; i++)
 			{
 				data = Xil_In32(XPAR_M04_AXI_0_BASEADDR + i*4);
-				sprintf(sendBuffer, "%d\r\n", (u16)data);
-				while (XUartNs550_Send(&UartInst, (u8*)sendBuffer, strlen(sendBuffer)) == 0);
+				buffer[i] = data;
+			}
 
+			for (int i = 0; i < 256; i++)
+			{
+				sprintf(sendBuffer, "%ld,", (u32)buffer[i]);
+				while (XUartNs550_Send(&UartInst, (u8*)sendBuffer, strlen(sendBuffer)) == 0);
 			}
 			histogram_flag = false;
 		}
